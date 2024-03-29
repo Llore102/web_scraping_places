@@ -316,7 +316,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
 
     driver = get_driver_with_retry()
 
-    driver.get(url_sku[0])
+    driver.get( url_sku[0] )
 
     #Cerrar pop ups
     try:
@@ -324,24 +324,28 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         boton.click()
     except TimeoutException:
         print("Pop up no encontrado")
-
     try:
 
-        wait(driver, 64).until(ec.presence_of_element_located((By.XPATH, '//*[@id="root"]/div/div[4]/div')))
-        df_producto = driver.find_elements((By.XPATH, '//*[@id="root"]/div/div[4]/div/div/main'))[0]
+        wait(driver, 64).until(ec.presence_of_element_located( (By.XPATH, './/main[ contains( @class , "product-content" ) ]' ) ))
+        df_producto = driver.find_element( By.XPATH, './/main[ contains( @class , "product-content" ) ]' )
 
         try:
-            id_url = df_producto.find_elements((By.XPATH, "div[@class='product-info']/div[@class='product-info-wrapper']/div[@class='product-aditional-info']/div[@class='aditional-info']/span[@class='product-code']"))[0].text
+            id_url = df_producto.find_element( By.XPATH, '//div[ contains( @class,"derecha") ]/.//span[ contains( @class,"product-code") ]' ).text
         except:
             id_url = ''
 
-        try: 
-            name_url = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div/div[4]/div/div/main/div[2]/div/div[3]/h1'))[0].text
+        try:
+            name_url = df_producto.find_element( By.XPATH, '//div[ contains( @class,"derecha") ]/.//h1[ contains( @class ,"product-name") ]' ).text
         except:
             name_url = ''
 
         try:
-            description_url =  df_producto.find_elements((By.XPATH, "div[@class='product-wrap-section activeNutricional']/div[@class='product-description']/div[@class='product-description-content']"))[0].text
+            obj_button_description = df_producto.find_element( By.XPATH , '//div[ contains( @class,"izquierda") ]/.//li/span[text()="Descripción"]' )
+            obj_button_description.click()
+            
+            obj_panel_info = df_producto.find_element( By.XPATH , '//div[ contains( @class,"izquierda") ]/.//div[@class="panel-content-style-for-jumbo"]' )
+            description_url = obj_panel_info.text
+
         except:
             description_url = ''
 
@@ -357,12 +361,11 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             cmr_price = ''
             
             try:
-                normal_price = df_producto.find_elements((By.XPATH, '//*[@id="scraping-tmp"]'))[0].text
-            
+                normal_price = df_producto.find_elements( By.XPATH, '//div[ contains( @class,"derecha") ]/.//*[@id="scraping-tmp"]' )[0].text
             except:
                 normal_price = ''
 
-            internet_price = df_producto.find_elements((By.XPATH, '//*[@id="scraping-tmp"]'))[0].text
+            internet_price = df_producto.find_elements(By.XPATH, '//div[ contains( @class,"derecha") ]/.//*[@id="scraping-tmp"]')[0].text
 
         except:
             normal_price = ''
@@ -381,8 +384,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             cod_sku = ''
 
         try:
-            images = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div/div[4]/div/div/main/div[1]/div[1]/div[1]/div/div/div[2]/img'))
-            
+            images = df_producto.find_elements(By.XPATH, '//div[ contains( @class,"izquierda") ]/.//div[contains( @class,"relative")]/.//img')
             img_url = ''
             px_url = ''
 
@@ -391,13 +393,9 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             for im, i in zip(images, range(n_imagenes)):
 
                 try:
-
-                    url = im.get_attribute("style")
-
-                    url = url[url.index('(')+2:url.index(')')-1]
-
+                    
+                    url = im.get_attribute("src")
                     url_img = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-
                     u = urlopen(url_img)
                     raw_data = u.read()
                     u.close()
@@ -407,13 +405,12 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
                     if i == n_imagenes-1:
                         img_url = img_url + url
                         px_url = px_url + str(img.size) 
-                
+                        
                     else:
                         img_url = img_url + url + '; '
                         px_url = px_url + str(img.size) + '; '
 
-                except:
-                    
+                except Exception as error:
                     if i == n_imagenes-1:
 
                         img_url = img_url + 'url_image not found'
@@ -454,7 +451,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         except:
             category_2 = ''
 
-    except:
+    except Exception as error:
         
         id_url = ''
         name_url = ''
@@ -548,3 +545,14 @@ def export_reports(pais:str,ruta:str,df1:pd.DataFrame,df2:pd.DataFrame,df3:pd.Da
 
     #except:
     #    print('Reports not export')
+
+if __name__ == "__main__":
+    
+    ulr = 'https://www.jumbo.cl/atun-lomitos-en-aceite-104-g-drenado-cuisine-and-co-1828066/p'
+    pais = "Chile"
+
+    ulr = 'https://www.jumbo.cl/caja-cer-royal-guard-bot-24x330cc-5-1964136-pak/p'
+
+    ulr = 'https://www.jumbo.cl/salmon-granel/p'
+
+    print( get_scraping_sku( pais , [ulr] ) )
