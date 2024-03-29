@@ -1,2 +1,4 @@
 __pycache__
 .env
+LightsailDefaultKey-us-east-1.pem
+LightsailDefaultKey-us-east-12.pem
