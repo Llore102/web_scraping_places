@@ -70,70 +70,61 @@ def get_url_lider():
     return(url_lider)
 
 def get_info_category():
-
-
+    
     driver = get_driver_with_retry()
     
     #Vamos a la dirección web de la página objetivo
-    driver.get(get_url_lider())
-
-    time.sleep(10)
-
-    
-    driver.save_screenshot('screenshotL.png')
-    
-        #Click en categorías
-    try:
-        boton = wait(driver, 4).until(ec.element_to_be_clickable((By.XPATH, '/html/body/div[1]/div[1]/div/header/div/div[1]/button')))
-        boton.click()
-    except TimeoutException:
-        print("Botón categorías no encontrado")
+    driver.get( get_url_lider() )
 
     list_categories = []
 
-    #Espera de 5 seg
-    time.sleep(5)
-
     #Obtener las categorías
     try:
-        wait(driver, 30).until(ec.element_to_be_clickable((By.XPATH, "/html/body/div[7]/div/div/div/div[1]")))
-        first_level_categories = driver.find_elements("xpath", "/html/body/div[7]/div/div/div/div[1]/div")
+        
+        wait(driver, 10).until(ec.element_to_be_clickable((By.XPATH, ".//header//button[text()='Categorías']")))
+        driver.find_element( By.XPATH , ".//header//button[text()='Categorías']" ).click()
+
+        wait(driver, 10).until(ec.element_to_be_clickable((By.XPATH, './/div[@data-testid="main-categories-test-id"]')))
+        first_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]/div')
         
         for first in first_level_categories:
             
             first_level_category = first.text
-
-            #scroll para visualizar
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);", first)
             
             #click en la categoria
             first.click()
-
-            wait(driver, 8).until(ec.presence_of_element_located((By.XPATH, "/html/body/div[4]/div/div/div/div[1]")))
-            second_level_categories = driver.find_elements("xpath", "/html/body/div[4]/div/div/div/div[1]/div")
-
+            
+            time.sleep(2)
+            second_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__ThirdLevelSection")]/div/a')
+            
             for second in second_level_categories:
-                
-                wait(second, 4).until(ec.presence_of_element_located((By.XPATH, "a")))
-                second_level_category = second.find_elements("xpath", "a")[0].text
-                url_first_level_category = second.find_elements("xpath", "a")[0].get_attribute("href")
+                    
+                second_level_category = second.text
+                url_second_level_category = second.get_attribute("href")
 
-                third_level_categories = second.find_elements("xpath", "div")
+                second = second.find_element("xpath", "..") #volvemos al div padre
+
+                element_third_level_categorie = second.find_element("xpath", "div/a") #tomamos el primer elemento
+                
+                driver_aux = get_driver_with_retry()
+                driver_aux.get( element_third_level_categorie.get_attribute("href") )
+                
+                wait(driver_aux, 10).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
+                third_level_categories = driver_aux.find_elements( "xpath" , './/ul[@class="sister-categories__list"]/li/a' )
 
                 for third in third_level_categories:
-                    
-                    wait(third, 4).until(ec.presence_of_element_located((By.XPATH, "a")))
-                    third_level_category = third.find_elements("xpath", "a")[0].text
-                    url_third_level_category = third.find_elements("xpath", "a")[0].get_attribute("href")
 
-                    list_categories.append([first_level_category, second_level_category, url_first_level_category, third_level_category, url_third_level_category])
-            
+                    third_level_category = third.text
+                    url_third_level_category = third.get_attribute("href")
+
+                    list_categories.append([first_level_category, second_level_category, url_second_level_category, third_level_category, url_third_level_category])
+                
+                driver_aux.quit()
             
     except TimeoutException:
         print("Categorias no encontradas")
-    
-    driver.close()
-    
+    driver.quit()
+
     return(pd.DataFrame(list_categories, columns = ['first_level_category', 'second_level_category', 'url_second_level_category', 'third_level_category', 'url_third_level_category']), len(list_categories))
 
 def get_pages_category(pais:str, i:str, first:str, second:str, third:str):
@@ -195,24 +186,22 @@ def get_info_product(pais:str, list_pages_category:list):
     second_level_category = list()
     third_level_category = list()
 
-    driver.get(list_pages_category[0])
-
-    time.sleep(3)
+    driver.get( list_pages_category[0] )
 
     try:
 
-        wait(driver, 16).until(ec.element_to_be_clickable((By.XPATH, "/html/body/div[@id='root']/div[@class='wrapper']/div[1]/div[3]/div[@class='app-container app-container--category-page']/div[@class='bs__grid__container']/div[@class='shop-wrapper']/div[@class='app-container--category-page__walstore-back-button-container']/div[@class='mb-4 ']/div[@class='shop-wrapper']/div[@class='d-flex']/div[@class='col-lg-9 col-md-8 bs__product-list__container']/div[@class='shop-content']/div[@class='ais-Hits']/ul[@class='ais-Hits-list']/li[@class='ais-Hits-item']/div[1]/div[1]")))
-        sku = driver.find_elements("xpath", "/html/body/div[@id='root']/div[@class='wrapper']/div[1]/div[3]/div[@class='app-container app-container--category-page']/div[@class='bs__grid__container']/div[@class='shop-wrapper']/div[@class='app-container--category-page__walstore-back-button-container']/div[@class='mb-4 ']/div[@class='shop-wrapper']/div[@class='d-flex']/div[@class='col-lg-9 col-md-8 bs__product-list__container']/div[@class='shop-content']/div[@class='ais-Hits']/ul[@class='ais-Hits-list']/li[@class='ais-Hits-item']/div[1]/div[1]")
-
-        for j in sku:
-            url_category.append(list_pages_category[0])
-
-            wait(j, 4).until(ec.presence_of_element_located((By.XPATH, "div[@class=' product-info']/h2/div[@class='product-card_description-wrapper']/div[1]/span[2]")))
-            name_product.append(j.find_elements("xpath", "div[@class=' product-info']/h2/div[@class='product-card_description-wrapper']/div[1]/span[2]")[0].text)
-
-            wait(j, 4).until(ec.presence_of_element_located((By.XPATH, "a")))
-            url_product.append(j.find_elements("xpath", "a")[0].get_attribute("href"))
+        wait( driver, 16).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')))
+        sku = driver.find_elements("xpath", './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')
+        
+        for producto in sku:
+            url_category.append( list_pages_category[0] )
             
+            indiv_nombre_product = producto.find_element( "xpath" , './/div[@class="product-card_description-wrapper"]/div/span[2]' ).text
+            indiv_url_producto = producto.find_element("xpath", ".//a").get_attribute("href")
+
+            name_product.append( indiv_nombre_product )
+            url_product.append( indiv_url_producto )
+
             first_level_category.append(list_pages_category[1])
             second_level_category.append(list_pages_category[2])
             third_level_category.append(list_pages_category[3])
@@ -230,7 +219,6 @@ def get_info_product(pais:str, list_pages_category:list):
     df_url_sku['third_level_category'] = third_level_category
     
     driver.close()
-
     return(df_url_sku.drop_duplicates())
 
 def get_info_products(pais:str, df_info_category:list):
@@ -260,30 +248,41 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
     driver.get(url_sku[0])
 
     try:
-
-        wait(driver, 64).until(ec.presence_of_element_located((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div')))
-        df_producto = driver.find_elements((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div/div'))[0]
-
+        
+        wait(driver, 10).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
+        df_producto = driver.find_element( By.XPATH, './/div[@class="product-detail-card__product-detail-container"]')
+        
         try:
-            id_url = df_producto.find_elements((By.XPATH, "div[@class='m-auto pb-20 product-detail__card-section']/div[@class='product-detail-page__container']/div[1]/div[1]/div[@class='product-detail-card__product-detail-container']/div[@class='product-detail-card__product']/div[@class='product-detail-card__product-info']/div[@class='product-detail-card__product-detail']"))[0].text
+            id_url = df_producto.find_element(By.XPATH, './/span[@class="product-detail-card__product-item-number"]' ).text
+            id_url = id_url.replace("item","").replace(" ","")
         except:
             id_url = ''
-
+        
         try: 
-            name_url = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div/div/div/div[1]/div[2]/div/div/div/div[2]/div/h1'))[0].text
+            name_url = df_producto.find_element(By.XPATH, './/h1[@class="product-detail-display-name"]' ).text
         except:
             name_url = ''
 
+
         try:
-            description_url =  df_producto.find_elements((By.XPATH, '//*[@id="OKTS_div"]/div/p[2]'))[0].text
+            div_detalles_producto = driver.find_element( By.XPATH , './/div[@data-testid="product-specifications-testid"]' )
+            
+            obj_button_description = div_detalles_producto.find_element( By.XPATH , '//button/span[text()="Descripción"]' )
+            obj_button_description.click()
+            
+            obj_panel_info = div_detalles_producto.find_element( By.XPATH , './/div/div/div[2]' )
+            description_url = obj_panel_info.text
+
         except:
             description_url = ''
+        
 
         try:
             atr_sku =  df_producto.find_elements((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div/div/div/div[1]/div[2]/div/div/div/div[2]/div/div[2]/span'))[0].text
         except:
             atr_sku = ''
             
+        
         try:
 
             normal_price = '' 
@@ -291,22 +290,22 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             cmr_price = ''
             
             try:
-                normal_price = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div/div/div/div[1]/div[2]/div/div/div/div[2]/div/div[4]/div/div[2]/span'))[0].text
-            
+                normal_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
+                normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
             except:
-                
-                try:
-                    normal_price = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div/div/div/div[1]/div[2]/div/div/div/div[2]/div/div[4]/div/div[2]/span'))[0].text
-                
-                except:
-                    normal_price = ''
+                normal_price = ''
 
-            internet_price = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div/div/div/div[1]/div[2]/div/div/div/div[2]/div/div[4]/div/div[1]/span'))[0].text
+            try:
+                internet_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
+                internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
+            except:
+                internet_price = ''
 
         except:
             normal_price = ''
             internet_price = ''
             cmr_price = ''
+
 
         try:
             wait(df_producto, 4).until(ec.presence_of_element_located((By.XPATH, "div[@class='m-auto pb-20 product-detail__card-section']/div[@class='product-detail-page__container']/div[1]/div[1]/div[@class='product-detail-card__product-detail-container']/div[@class='product-detail-card__product']/div[@class='product-detail-card__product-info']/div[@class='product-detail-card__product-detail']")))
@@ -319,34 +318,39 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         except:
             cod_sku = ''
 
+
         try:
-            images = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div/div/div/div[1]/div[2]/div/div/div/div[1]/div/div[2]/figure'))
             
             img_url = ''
             px_url = ''
+
+            images = df_producto.find_elements(By.XPATH, './/div[@class="image-preview__figure-wrapper"]/figure')
 
             n_imagenes = len(images)
 
             for im, i in zip(images, range(n_imagenes)):
 
                 try:
+                    stile_img = im.get_attribute("style") #la url no esta en figure, sino en su style
+                    expre_regular = r'url\("([^"]+)"\)'
+                    im_url = re.search( expre_regular , stile_img ).group(1)
 
-                    url_img = Request(im.get_attribute("src"), headers={'User-Agent': 'Mozilla/5.0'})
-
-                    u = urlopen(url_img)
+                    request_img = Request( im_url , headers={'User-Agent': 'Mozilla/5.0'})
+                    
+                    u = urlopen( request_img )
                     raw_data = u.read()
                     u.close()
-
+                    
                     img = Image.open(BytesIO(raw_data))
-
+                    
                     if i == n_imagenes-1:
-                        img_url = img_url + im.get_attribute("src")
+                        img_url = img_url + im_url
                         px_url = px_url + str(img.size) 
-                
+                        
                     else:
-                        img_url = img_url + im.get_attribute("src") + '; '
+                        img_url = img_url + im_url + '; '
                         px_url = px_url + str(img.size) + '; '
-
+                    
                 except:
                     
                     if i == n_imagenes-1:
@@ -360,7 +364,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
                         px_url = px_url + '; '
             
             image_info_1, image_info_2 = img_url, px_url
-
+        
         except:
             image_info_1,image_info_2 = '',''
 
@@ -390,7 +394,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             category_2 = ''
 
     except:
-        
+        print("Error..")
         id_url = ''
         name_url = ''
         description_url = ''
@@ -409,7 +413,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         category_2 = ''
     
     driver.close()
-
+    
     return pais_sku, url_sku[0], id_url, name_url, description_url, id_client_sku, cod_sku, first, second, third, category_1, category_2, atr_sku, normal_price, internet_price, cmr_price, image_info_1, image_info_2
 
 def get_df_scraping(pais:str, list_url:list):
@@ -483,3 +487,22 @@ def export_reports(pais:str,ruta:str,df1:pd.DataFrame,df2:pd.DataFrame,df3:pd.Da
 
     #except:
     #    print('Reports not export')
+
+if __name__ == "__main__":
+    
+    
+    #list_pages_category = ["https://www.lider.cl/supermercado/category/Despensa/Pastas_y_Salsas/Pastas_Cortas" , "Despensa","Pastas y Salsas","Pastas Cortas"]
+    #list_pages_category = ["https://www.lider.cl/supermercado/category/Carnes_y_Pescados/Todas_las_Carnes/Carnes_Premium" , "Despensa","Pastas y Salsas","Pastas Cortas"]
+    #list_pages_category = ["https://www.lider.cl/supermercado/category/Despensa/Pastas_y_Salsas" , "Despensa","Pastas y Salsas","Pastas Cortas"]
+    #productos = get_info_product( "Chile" , list_pages_category )
+    #print( productos )
+
+
+    #url_prod = "https://www.lider.cl/supermercado/product/sku/1183/nestle-naturnes-colado-carne-y-verduras-215-g"
+    #url_prod = "https://www.lider.cl/supermercado/product/sku/2411/tucapel-arroz-grado-2-bolsa-1-kg"
+    #data = get_scraping_sku( "Chile" , [url_prod] )
+    #print( data )
+
+
+    #get_info_category()
+

@@ -362,10 +362,15 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             
             try:
                 normal_price = df_producto.find_elements( By.XPATH, '//div[ contains( @class,"derecha") ]/.//*[@id="scraping-tmp"]' )[0].text
+                normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
             except:
                 normal_price = ''
-
-            internet_price = df_producto.find_elements(By.XPATH, '//div[ contains( @class,"derecha") ]/.//*[@id="scraping-tmp"]')[0].text
+            
+            try:
+                internet_price = df_producto.find_elements(By.XPATH, '//div[ contains( @class,"derecha") ]/.//*[@id="scraping-tmp"]')[0].text
+                internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
+            except:
+                internet_price = ''
 
         except:
             normal_price = ''
