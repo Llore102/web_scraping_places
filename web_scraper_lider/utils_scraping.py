@@ -89,6 +89,11 @@ def get_info_category():
         
         for first in first_level_categories:
             
+            div_desplazable = driver.find_element("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]')
+            driver.execute_script( "arguments[0].scrollTop = arguments[1];" , div_desplazable , 0 )
+            posicion_y = first.location['y']
+            driver.execute_script( "arguments[0].scrollTop = arguments[1];" , div_desplazable , posicion_y )
+
             first_level_category = first.text
             
             #click en la categoria
@@ -278,7 +283,9 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         
 
         try:
-            atr_sku =  df_producto.find_elements((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div/div/div/div[1]/div[2]/div/div/div/div[2]/div/div[2]/span'))[0].text
+            atr_sku =  "https://www.lider.cl/supermercado/product/sku/829152/koyle-vino-tinto-gran-reserva-cabernet-sauvignon-botella-750-ml"
+            patron = r"/sku/(\d+)/"
+            atr_sku = re.search(patron, url_sku[0]).group(1)
         except:
             atr_sku = ''
             
@@ -290,13 +297,19 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             cmr_price = ''
             
             try:
-                normal_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
+                try:
+                    normal_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
+                except:
+                    normal_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
                 normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
             except:
                 normal_price = ''
 
             try:
-                internet_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
+                try:
+                    internet_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
+                except:
+                    internet_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
                 internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
             except:
                 internet_price = ''
@@ -490,7 +503,6 @@ def export_reports(pais:str,ruta:str,df1:pd.DataFrame,df2:pd.DataFrame,df3:pd.Da
 
 if __name__ == "__main__":
     
-    
     #list_pages_category = ["https://www.lider.cl/supermercado/category/Despensa/Pastas_y_Salsas/Pastas_Cortas" , "Despensa","Pastas y Salsas","Pastas Cortas"]
     #list_pages_category = ["https://www.lider.cl/supermercado/category/Carnes_y_Pescados/Todas_las_Carnes/Carnes_Premium" , "Despensa","Pastas y Salsas","Pastas Cortas"]
     #list_pages_category = ["https://www.lider.cl/supermercado/category/Despensa/Pastas_y_Salsas" , "Despensa","Pastas y Salsas","Pastas Cortas"]
@@ -500,6 +512,7 @@ if __name__ == "__main__":
 
     #url_prod = "https://www.lider.cl/supermercado/product/sku/1183/nestle-naturnes-colado-carne-y-verduras-215-g"
     #url_prod = "https://www.lider.cl/supermercado/product/sku/2411/tucapel-arroz-grado-2-bolsa-1-kg"
+    #url_prod = "https://www.lider.cl/supermercado/product/sku/829152/koyle-vino-tinto-gran-reserva-cabernet-sauvignon-botella-750-ml"
     #data = get_scraping_sku( "Chile" , [url_prod] )
     #print( data )
 
