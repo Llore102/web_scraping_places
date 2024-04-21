@@ -90,7 +90,7 @@ def get_info_category():
         wait(driver, 10).until(ec.element_to_be_clickable((By.XPATH, './/div[@data-testid="main-categories-test-id"]')))
         first_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]/div')
                 
-        for first in first_level_categories[8:30]:
+        for first in first_level_categories:
             
             div_desplazable = driver.find_element("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]')
             driver.execute_script( "arguments[0].scrollTop = arguments[1];" , div_desplazable , 0 )
@@ -123,8 +123,8 @@ def get_info_category():
                         wait(driver_aux, 10).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
                         third_level_categories = driver_aux.find_elements( "xpath" , './/ul[@class="sister-categories__list"]/li/a' )
 
-                        for third in third_level_categories[0:1]:
-
+                        for third in third_level_categories:
+                            
                             third_level_category = third.text
                             url_third_level_category = third.get_attribute("href")
                             
