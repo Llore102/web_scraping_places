@@ -2,9 +2,9 @@
 
 import multiprocessing as mp
 # import istarmap  # import to apply patch
-from web_scraper_jumbo import istarmap
+from web_scraper_jumbo.istarmap import istarmap
 from selenium.webdriver.support.ui import WebDriverWait as wait
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
@@ -13,7 +13,7 @@ import multiprocessing as mp
 
 
 
-import tqdm
+from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
@@ -23,14 +23,14 @@ from datetime import datetime
 from PIL import Image
 from urllib.request import urlopen,Request
 from io import BytesIO
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
+# from selenium import webdriver
+# from webdriver_manager.chrome import ChromeDriverManager
+# from selenium.webdriver.chrome.service import Service
 
 import time
 import psutil
 import os
-# from driver.driver import get_driver_with_retry
+from driver.driver import get_driver_with_retry
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -51,23 +51,23 @@ ruta = os.path.dirname(os.path.abspath(__file__))
 # headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)Chrome/79.0.3945.117 Safari/537.36"}
 
 
-def get_driver_with_retry():
-    chrome_options = webdriver.ChromeOptions()
-    # chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
-    chrome_options.add_argument("--window-size=1920,1080")  # Establecer el tamaño de la ventana
-    chrome_options.add_argument("--start-maximized")  # Maximizar la ventana al abrirse
-    chrome_options.add_argument("--disable-infobars")  # Deshabilitar la barra de información
-    chrome_options.add_argument("--disable-extensions")  # Deshabilitar las extensiones del navegador
-    # chrome_options.add_argument("--disable-gpu")  # Deshabilitar la aceleración de GPU
-    # chrome_options.add_argument("--disable-dev-shm-usage")  # Deshabilitar el uso compartido de memoria
-    chrome_options.add_argument("--no-sandbox") 
-    chrome_options.add_argument("--headless")  # Opcional: para ejecución en segundo plano
+#def get_driver_with_retry():
+#    chrome_options = webdriver.ChromeOptions()
+#    # chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
+#    chrome_options.add_argument("--window-size=1920,1080")  # Establecer el tamaño de la ventana
+#    chrome_options.add_argument("--start-maximized")  # Maximizar la ventana al abrirse
+#    chrome_options.add_argument("--disable-infobars")  # Deshabilitar la barra de información
+#    chrome_options.add_argument("--disable-extensions")  # Deshabilitar las extensiones del navegador
+#    # chrome_options.add_argument("--disable-gpu")  # Deshabilitar la aceleración de GPU
+#    # chrome_options.add_argument("--disable-dev-shm-usage")  # Deshabilitar el uso compartido de memoria
+#    chrome_options.add_argument("--no-sandbox") 
+#    chrome_options.add_argument("--headless")  # Opcional: para ejecución en segundo plano
 
-            # Instanciar el controlador de Chrome y pasar las opciones como argumento
-    selenium_service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=selenium_service, options=chrome_options)
-    driver.maximize_window()
-    return driver
+#            # Instanciar el controlador de Chrome y pasar las opciones como argumento
+#    selenium_service = Service(ChromeDriverManager().install())
+#    driver = webdriver.Chrome(service=selenium_service, options=chrome_options)
+#    driver.maximize_window()
+#    return driver
 
 
 
@@ -79,21 +79,23 @@ def get_url_jumbo():
 
 def get_info_category():
 
-    chrome_options = webdriver.ChromeOptions()
+    #chrome_options = webdriver.ChromeOptions()
     # chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
-    chrome_options.add_argument("--window-size=1920,1080")  # Establecer el tamaño de la ventana
-    chrome_options.add_argument("--start-maximized")  # Maximizar la ventana al abrirse
-    chrome_options.add_argument("--disable-infobars")  # Deshabilitar la barra de información
-    chrome_options.add_argument("--disable-extensions")  # Deshabilitar las extensiones del navegador
+    #chrome_options.add_argument("--window-size=1920,1080")  # Establecer el tamaño de la ventana
+    #chrome_options.add_argument("--start-maximized")  # Maximizar la ventana al abrirse
+    #chrome_options.add_argument("--disable-infobars")  # Deshabilitar la barra de información
+    #chrome_options.add_argument("--disable-extensions")  # Deshabilitar las extensiones del navegador
     # chrome_options.add_argument("--disable-gpu")  # Deshabilitar la aceleración de GPU
     # chrome_options.add_argument("--disable-dev-shm-usage")  # Deshabilitar el uso compartido de memoria
-    chrome_options.add_argument("--no-sandbox") 
-    chrome_options.add_argument("--headless")  # Opcional: para ejecución en segundo plano
+    #chrome_options.add_argument("--no-sandbox") 
+    #chrome_options.add_argument("--headless")  # Opcional: para ejecución en segundo plano
 
-            # Instanciar el controlador de Chrome y pasar las opciones como argumento
-    selenium_service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=selenium_service, options=chrome_options)
-    driver.maximize_window()
+    #        # Instanciar el controlador de Chrome y pasar las opciones como argumento
+    #selenium_service = Service(ChromeDriverManager().install())
+    #driver = webdriver.Chrome(service=selenium_service, options=chrome_options)
+    #driver.maximize_window()
+
+    driver = get_driver_with_retry()
     
     driver.get(get_url_jumbo())
 
@@ -224,7 +226,7 @@ def get_pages_categories(pais:str, df_categories:pd.DataFrame):
 
     with mp.Pool(n) as pool:
         iterable = [(pais, i, first, second, third) for i, first, second, third in zip(df_categories.url_third_level_category, df_categories.first_level_category, df_categories.second_level_category, df_categories.third_level_category)]
-        results = list(tqdm.tqdm(pool.istarmap(get_pages_category, iterable), total=len(iterable)))
+        results = list(tqdm(pool.istarmap(get_pages_category, iterable), total=len(iterable)))
         pool.close()
         pool.join()
 
@@ -233,22 +235,27 @@ def get_pages_categories(pais:str, df_categories:pd.DataFrame):
     
     return(pd.DataFrame(list_res, columns=['url_category', 'first_level_category', 'second_level_category', 'third_level_category']).drop_duplicates().values.tolist())
 
-def get_info_product(pais:str, list_pages_category:list):
 
+###### Codigo modificado
+def remove_problematic_row(index, *lists):
+    for lst in lists:
+        del lst[index]
+
+# Función para obtener la información del producto
+def get_info_product(pais, list_pages_category):
     driver = get_driver_with_retry()
+    url_category = []
+    name_product = []
+    url_product = []
+    first_level_category = []
+    second_level_category = []
+    third_level_category = []
 
-    url_category = list()
-    name_product = list()
-    url_product = list()
-    first_level_category = list()
-    second_level_category = list()
-    third_level_category = list()
-
+    # Navega a la página de categoría
     driver.get(list_pages_category[0])
-
     time.sleep(3)
 
-    #Cerrar pop ups
+    # Cerrar pop ups
     try:
         boton = wait(driver, 4).until(ec.element_to_be_clickable((By.XPATH, "/html/body/div[@id='root']/div[@class='app-content']/header[@class='new-header-v2']/div[@class='header-content-v2 ']/div[@class='content-menu-wrapper-v2 ']/div[@class='popover-container undefined']/div[@class='popover-select-delivery-method-v2']/div[@class='popover-delivery-info']/button[@class='popover-delivery-close jumbo-icon-new-close']")))
         boton.click()
@@ -256,51 +263,132 @@ def get_info_product(pais:str, list_pages_category:list):
         print("Pop up no encontrado")
 
     try:
-
         wait(driver, 4).until(ec.element_to_be_clickable((By.XPATH, "/html/body/div[@id='root']/div[@class='app-content']/div[@class='catalog-page page']/div[@class='container']/div[@class='catalog-page-content']/main[@class='shelf-main']/div[@class='shelf-wrapper']/div[@class='shelf-products-wrap']/div[@class='shelf-content']/div[@class='product-card']/div[@class='product-card-wrap']")))
         sku = driver.find_elements("xpath", "/html/body/div[@id='root']/div[@class='app-content']/div[@class='catalog-page page']/div[@class='container']/div[@class='catalog-page-content']/main[@class='shelf-main']/div[@class='shelf-wrapper']/div[@class='shelf-products-wrap']/div[@class='shelf-content']/div[@class='product-card']/div[@class='product-card-wrap']")
-
+        
         for j in sku:
             url_category.append(list_pages_category[0])
+            try:
+                name_product.append(j.find_element(By.XPATH, "a[@class='product-card-name']").text)
+                url_product.append(j.find_element(By.XPATH, "a[@class='product-card-name']").get_attribute("href"))
+                
+                first_level_category.append(list_pages_category[1])
+                second_level_category.append(list_pages_category[2])
+                third_level_category.append(list_pages_category[3])
+                
+            except Exception as e:
+                print(f"Error al procesar el producto: {str(e)}")
+                # Identifica la fila problemática y elimínala de las listas
+                remove_problematic_row(-1, url_category, name_product, url_product, first_level_category, second_level_category, third_level_category)
 
-            wait(j, 4).until(ec.presence_of_element_located((By.XPATH, "a[@class='product-card-name']")))
-            name_product.append(j.find_elements("xpath", "a[@class='product-card-name']")[0].text)
+    except Exception as e:
+        print(f"ERROR: url not found: {str(e)}")
 
-            wait(j, 4).until(ec.presence_of_element_located((By.XPATH, "a[@class='product-card-name']")))
-            url_product.append(j.find_elements("xpath", "a[@class='product-card-name']")[0].get_attribute("href"))
-            
-            first_level_category.append(list_pages_category[1])
-            second_level_category.append(list_pages_category[2])
-            third_level_category.append(list_pages_category[3])
-
-    except:
-        print('ERROR: url not found')
-        
     driver.close()
 
-    df_url_sku = pd.DataFrame()
+    # Verifica si las longitudes de las listas son iguales antes de crear el DataFrame
+    lengths = [len(url_category), len(name_product), len(url_product), len(first_level_category), len(second_level_category), len(third_level_category)]
+    if len(set(lengths)) != 1:
+        print(f"Error: Longitudes de listas desiguales: {lengths}")
+        return None
 
-    df_url_sku['url_category'] = url_category
-    df_url_sku['name_product'] = name_product
-    df_url_sku['url_product'] = url_product
-    df_url_sku['first_level_category'] = first_level_category
-    df_url_sku['second_level_category'] = second_level_category
-    df_url_sku['third_level_category'] = third_level_category
-    
-    return(df_url_sku.drop_duplicates())
+    # Crea el DataFrame si las longitudes de las listas son iguales
+    df_url_sku = pd.DataFrame({
+        'url_category': url_category,
+        'name_product': name_product,
+        'url_product': url_product,
+        'first_level_category': first_level_category,
+        'second_level_category': second_level_category,
+        'third_level_category': third_level_category
+    })
 
-def get_info_products(pais:str, df_info_category:list):
+    return df_url_sku.drop_duplicates()
 
-    with mp.Pool(n) as pool:
+# Función para obtener la información de los productos
+def get_info_products(pais, df_info_category):
+    with mp.Pool() as pool:
         iterable = [(pais, i) for i in df_info_category]
-        results = list(tqdm.tqdm(pool.istarmap(get_info_product, iterable), total=len(iterable)))
+        results = list(tqdm(pool.istarmap(get_info_product, iterable), total=len(iterable)))
         pool.close()
         pool.join()
+
+    # Filtrar los resultados que no son None
+    results = [result for result in results if result is not None]
     
-    if len(results)==0:
-        return(pd.DataFrame(columns=['url_category', 'name_product', 'url_product', 'first_level_category', 'second_level_category', 'third_level_category']))
-    elif len(results)>0:
-        return(pd.concat(results).drop_duplicates())
+    if len(results) == 0:
+        return pd.DataFrame(columns=['url_category', 'name_product', 'url_product', 'first_level_category', 'second_level_category', 'third_level_category'])
+    elif len(results) > 0:
+        return pd.concat(results).drop_duplicates()
+    
+########## --------------------------------------------------
+# def get_info_product(pais:str, list_pages_category:list):
+
+#     driver = get_driver_with_retry()
+
+#     url_category = list()
+#     name_product = list()
+#     url_product = list()
+#     first_level_category = list()
+#     second_level_category = list()
+#     third_level_category = list()
+
+#     driver.get(list_pages_category[0])
+
+#     time.sleep(3)
+
+#     #Cerrar pop ups
+#     try:
+#         boton = wait(driver, 4).until(ec.element_to_be_clickable((By.XPATH, "/html/body/div[@id='root']/div[@class='app-content']/header[@class='new-header-v2']/div[@class='header-content-v2 ']/div[@class='content-menu-wrapper-v2 ']/div[@class='popover-container undefined']/div[@class='popover-select-delivery-method-v2']/div[@class='popover-delivery-info']/button[@class='popover-delivery-close jumbo-icon-new-close']")))
+#         boton.click()
+#     except TimeoutException:
+#         print("Pop up no encontrado")
+
+#     try:
+
+#         wait(driver, 4).until(ec.element_to_be_clickable((By.XPATH, "/html/body/div[@id='root']/div[@class='app-content']/div[@class='catalog-page page']/div[@class='container']/div[@class='catalog-page-content']/main[@class='shelf-main']/div[@class='shelf-wrapper']/div[@class='shelf-products-wrap']/div[@class='shelf-content']/div[@class='product-card']/div[@class='product-card-wrap']")))
+#         sku = driver.find_elements("xpath", "/html/body/div[@id='root']/div[@class='app-content']/div[@class='catalog-page page']/div[@class='container']/div[@class='catalog-page-content']/main[@class='shelf-main']/div[@class='shelf-wrapper']/div[@class='shelf-products-wrap']/div[@class='shelf-content']/div[@class='product-card']/div[@class='product-card-wrap']")
+
+#         for j in sku:
+#             url_category.append(list_pages_category[0])
+
+#             wait(j, 4).until(ec.presence_of_element_located((By.XPATH, "a[@class='product-card-name']")))
+#             name_product.append(j.find_elements("xpath", "a[@class='product-card-name']")[0].text)
+
+#             wait(j, 4).until(ec.presence_of_element_located((By.XPATH, "a[@class='product-card-name']")))
+#             url_product.append(j.find_elements("xpath", "a[@class='product-card-name']")[0].get_attribute("href"))
+            
+#             first_level_category.append(list_pages_category[1])
+#             second_level_category.append(list_pages_category[2])
+#             third_level_category.append(list_pages_category[3])
+
+#     except:
+#         print('ERROR: url not found')
+        
+#     driver.close()
+
+#     df_url_sku = pd.DataFrame()
+
+#     df_url_sku['url_category'] = url_category
+#     df_url_sku['name_product'] = name_product
+#     df_url_sku['url_product'] = url_product
+#     df_url_sku['first_level_category'] = first_level_category
+#     df_url_sku['second_level_category'] = second_level_category
+#     df_url_sku['third_level_category'] = third_level_category
+    
+#     return(df_url_sku.drop_duplicates())
+
+# def get_info_products(pais:str, df_info_category:list):
+
+#     with mp.Pool(n) as pool:
+#         iterable = [(pais, i) for i in df_info_category]
+#         results = list(tqdm.tqdm(pool.istarmap(get_info_product, iterable), total=len(iterable)))
+#         pool.close()
+#         pool.join()
+    
+#     if len(results)==0:
+#         return(pd.DataFrame(columns=['url_category', 'name_product', 'url_product', 'first_level_category', 'second_level_category', 'third_level_category']))
+#     elif len(results)>0:
+#         return(pd.concat(results).drop_duplicates())
 
 def validate_url_cat(total_url_sku:pd.DataFrame, df_categories:pd.DataFrame):
 
@@ -316,7 +404,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
 
     driver = get_driver_with_retry()
 
-    driver.get(url_sku[0])
+    driver.get( url_sku[0] )
 
     #Cerrar pop ups
     try:
@@ -324,24 +412,31 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         boton.click()
     except TimeoutException:
         print("Pop up no encontrado")
-
     try:
 
-        wait(driver, 64).until(ec.presence_of_element_located((By.XPATH, '//*[@id="root"]/div/div[4]/div')))
-        df_producto = driver.find_elements((By.XPATH, '//*[@id="root"]/div/div[4]/div/div/main'))[0]
-
         try:
-            id_url = df_producto.find_elements((By.XPATH, "div[@class='product-info']/div[@class='product-info-wrapper']/div[@class='product-aditional-info']/div[@class='aditional-info']/span[@class='product-code']"))[0].text
+            wait(driver, 64).until(ec.presence_of_element_located( (By.XPATH, './/main[ contains( @class , "product-content" ) ]' ) ))
+            df_producto = driver.find_element( By.XPATH, './/main[ contains( @class , "product-content" ) ]' )
+        except TimeoutException:
+            print("Timeout al intentar encontrar el elemento en la página.")
+            
+        try:
+            id_url = df_producto.find_element( By.XPATH, '//div[ contains( @class,"derecha") ]/.//span[ contains( @class,"product-code") ]' ).text
         except:
             id_url = ''
 
-        try: 
-            name_url = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div/div[4]/div/div/main/div[2]/div/div[3]/h1'))[0].text
+        try:
+            name_url = df_producto.find_element( By.XPATH, '//div[ contains( @class,"derecha") ]/.//h1[ contains( @class ,"product-name") ]' ).text
         except:
             name_url = ''
 
         try:
-            description_url =  df_producto.find_elements((By.XPATH, "div[@class='product-wrap-section activeNutricional']/div[@class='product-description']/div[@class='product-description-content']"))[0].text
+            obj_button_description = df_producto.find_element( By.XPATH , '//div[ contains( @class,"izquierda") ]/.//li/span[text()="Descripción"]' )
+            obj_button_description.click()
+            
+            obj_panel_info = df_producto.find_element( By.XPATH , '//div[ contains( @class,"izquierda") ]/.//div[@class="panel-content-style-for-jumbo"]' )
+            description_url = obj_panel_info.text
+
         except:
             description_url = ''
 
@@ -357,12 +452,16 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             cmr_price = ''
             
             try:
-                normal_price = df_producto.find_elements((By.XPATH, '//*[@id="scraping-tmp"]'))[0].text
-            
+                normal_price = df_producto.find_elements( By.XPATH, '//div[ contains( @class,"derecha") ]/.//*[@id="scraping-tmp"]' )[0].text
+                #normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
             except:
                 normal_price = ''
-
-            internet_price = df_producto.find_elements((By.XPATH, '//*[@id="scraping-tmp"]'))[0].text
+            
+            try:
+                internet_price = df_producto.find_elements(By.XPATH, '//div[ contains( @class,"derecha") ]/.//*[@id="scraping-tmp"]')[0].text
+                # internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
+            except:
+                internet_price = ''
 
         except:
             normal_price = ''
@@ -381,8 +480,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             cod_sku = ''
 
         try:
-            images = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div/div[4]/div/div/main/div[1]/div[1]/div[1]/div/div/div[2]/img'))
-            
+            images = df_producto.find_elements(By.XPATH, '//div[ contains( @class,"izquierda") ]/.//div[contains( @class,"relative")]/.//img')
             img_url = ''
             px_url = ''
 
@@ -391,13 +489,9 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             for im, i in zip(images, range(n_imagenes)):
 
                 try:
-
-                    url = im.get_attribute("style")
-
-                    url = url[url.index('(')+2:url.index(')')-1]
-
+                    
+                    url = im.get_attribute("src")
                     url_img = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-
                     u = urlopen(url_img)
                     raw_data = u.read()
                     u.close()
@@ -407,13 +501,12 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
                     if i == n_imagenes-1:
                         img_url = img_url + url
                         px_url = px_url + str(img.size) 
-                
+                        
                     else:
                         img_url = img_url + url + '; '
                         px_url = px_url + str(img.size) + '; '
 
-                except:
-                    
+                except Exception as error:
                     if i == n_imagenes-1:
 
                         img_url = img_url + 'url_image not found'
@@ -454,7 +547,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         except:
             category_2 = ''
 
-    except:
+    except Exception as error:
         
         id_url = ''
         name_url = ''
@@ -481,13 +574,15 @@ def get_df_scraping(pais:str, list_url:list):
 
     with mp.Pool(n) as pool:
         iterable = [(pais, li) for li in list_url]
-        results = list(tqdm.tqdm(pool.istarmap(get_scraping_sku, iterable), total=len(iterable)))
+        results = list(tqdm(pool.istarmap(get_scraping_sku, iterable), total=len(iterable)))
         pool.close()
         pool.join()
 
     return(pd.DataFrame(results, columns=['pais', 'url_sku', 'id', 'name', 'description', 'id_client', 'cod_sku', 'first_category',
                                         'second_category', 'third_category', 'category_1', 'category_2', 'attributes', 'normal_price',
                                         'internet_price', 'cmr_price', 'url_image', 'pixel_image']))
+
+
 
 
 ########################################################
