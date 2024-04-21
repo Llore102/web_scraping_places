@@ -75,9 +75,12 @@ def get_info_category():
     
     #Vamos a la dirección web de la página objetivo
     driver.get( get_url_lider() )
+<<<<<<< HEAD
 
     time.sleep(20)
     driver.save_screenshot('screenshotL.png')
+=======
+>>>>>>> c19c95473e9b2c45219ec02b4802a5a0a2bfd5f6
 
     list_categories = []
 
@@ -257,6 +260,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
 
     try:
         
+<<<<<<< HEAD
         try:
             wait(driver, 64).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
             df_producto = driver.find_element( By.XPATH, './/div[@class="product-detail-card__product-detail-container"]')
@@ -265,6 +269,14 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         try:
             id_url = df_producto.find_element(By.XPATH, './/span[@class="product-detail-card__product-item-number"]' ).text
             # id_url = id_url.replace("item","").replace(" ","")
+=======
+        wait(driver, 10).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
+        df_producto = driver.find_element( By.XPATH, './/div[@class="product-detail-card__product-detail-container"]')
+        
+        try:
+            id_url = df_producto.find_element(By.XPATH, './/span[@class="product-detail-card__product-item-number"]' ).text
+            id_url = id_url.replace("item","").replace(" ","")
+>>>>>>> c19c95473e9b2c45219ec02b4802a5a0a2bfd5f6
         except:
             id_url = ''
         
@@ -306,7 +318,11 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
                     normal_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
                 except:
                     normal_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
+<<<<<<< HEAD
                 # normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
+=======
+                normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
+>>>>>>> c19c95473e9b2c45219ec02b4802a5a0a2bfd5f6
             except:
                 normal_price = ''
 
@@ -315,7 +331,11 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
                     internet_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
                 except:
                     internet_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
+<<<<<<< HEAD
                 # internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
+=======
+                internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
+>>>>>>> c19c95473e9b2c45219ec02b4802a5a0a2bfd5f6
             except:
                 internet_price = ''
 
@@ -506,3 +526,24 @@ def export_reports(pais:str,ruta:str,df1:pd.DataFrame,df2:pd.DataFrame,df3:pd.Da
     #except:
     #    print('Reports not export')
 
+<<<<<<< HEAD
+=======
+if __name__ == "__main__":
+    
+    #list_pages_category = ["https://www.lider.cl/supermercado/category/Despensa/Pastas_y_Salsas/Pastas_Cortas" , "Despensa","Pastas y Salsas","Pastas Cortas"]
+    #list_pages_category = ["https://www.lider.cl/supermercado/category/Carnes_y_Pescados/Todas_las_Carnes/Carnes_Premium" , "Despensa","Pastas y Salsas","Pastas Cortas"]
+    #list_pages_category = ["https://www.lider.cl/supermercado/category/Despensa/Pastas_y_Salsas" , "Despensa","Pastas y Salsas","Pastas Cortas"]
+    #productos = get_info_product( "Chile" , list_pages_category )
+    #print( productos )
+
+
+    #url_prod = "https://www.lider.cl/supermercado/product/sku/1183/nestle-naturnes-colado-carne-y-verduras-215-g"
+    #url_prod = "https://www.lider.cl/supermercado/product/sku/2411/tucapel-arroz-grado-2-bolsa-1-kg"
+    #url_prod = "https://www.lider.cl/supermercado/product/sku/829152/koyle-vino-tinto-gran-reserva-cabernet-sauvignon-botella-750-ml"
+    #data = get_scraping_sku( "Chile" , [url_prod] )
+    #print( data )
+
+
+    #get_info_category()
+
+>>>>>>> c19c95473e9b2c45219ec02b4802a5a0a2bfd5f6
