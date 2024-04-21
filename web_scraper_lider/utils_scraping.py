@@ -89,14 +89,13 @@ def get_info_category():
 
         wait(driver, 10).until(ec.element_to_be_clickable((By.XPATH, './/div[@data-testid="main-categories-test-id"]')))
         first_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]/div')
-        
-        for first in first_level_categories:
+                
+        for first in first_level_categories[8:30]:
             
             div_desplazable = driver.find_element("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]')
             driver.execute_script( "arguments[0].scrollTop = arguments[1];" , div_desplazable , 0 )
             posicion_y = first.location['y']
             driver.execute_script( "arguments[0].scrollTop = arguments[1];" , div_desplazable , posicion_y )
-
             first_level_category = first.text
             
             #click en la categoria
@@ -106,32 +105,46 @@ def get_info_category():
             second_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__ThirdLevelSection")]/div/a')
             
             for second in second_level_categories:
-                    
+                
                 second_level_category = second.text
                 url_second_level_category = second.get_attribute("href")
 
                 second = second.find_element("xpath", "..") #volvemos al div padre
 
-                element_third_level_categorie = second.find_element("xpath", "div/a") #tomamos el primer elemento
-                
-                driver_aux = get_driver_with_retry()
-                driver_aux.get( element_third_level_categorie.get_attribute("href") )
-                
-                wait(driver_aux, 10).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
-                third_level_categories = driver_aux.find_elements( "xpath" , './/ul[@class="sister-categories__list"]/li/a' )
+                element_third_level_categorie = second.find_elements("xpath", "div/a") #tomamos el primer elemento
+                            
+                intento_correcto = False
+                for intento_subcategoria in element_third_level_categorie:
+                    
+                    try:
+                        driver_aux = get_driver_with_retry()
+                        driver_aux.get( intento_subcategoria.get_attribute("href") )
+                        
+                        wait(driver_aux, 10).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
+                        third_level_categories = driver_aux.find_elements( "xpath" , './/ul[@class="sister-categories__list"]/li/a' )
 
-                for third in third_level_categories:
+                        for third in third_level_categories[0:1]:
 
-                    third_level_category = third.text
-                    url_third_level_category = third.get_attribute("href")
+                            third_level_category = third.text
+                            url_third_level_category = third.get_attribute("href")
+                            
+                            list_categories.append([first_level_category, second_level_category, url_second_level_category, third_level_category, url_third_level_category])
+                        
+                        intento_correcto = True
 
-                    list_categories.append([first_level_category, second_level_category, url_second_level_category, third_level_category, url_third_level_category])
-                
-                driver_aux.quit()
-            
+                    except:
+                        intento_correcto = False
+
+                    finally:
+                        driver_aux.quit()
+
+                    if intento_correcto == True:
+                        break
+                    
     except TimeoutException:
         print("Categorias no encontradas")
-    driver.quit()
+    finally:
+        driver.quit()
 
     return(pd.DataFrame(list_categories, columns = ['first_level_category', 'second_level_category', 'url_second_level_category', 'third_level_category', 'url_third_level_category']), len(list_categories))
 
@@ -506,3 +519,6 @@ def export_reports(pais:str,ruta:str,df1:pd.DataFrame,df2:pd.DataFrame,df3:pd.Da
     #except:
     #    print('Reports not export')
 
+if __name__ == "__main__":
+    
+    get_info_category()
