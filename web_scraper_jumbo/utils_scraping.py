@@ -414,7 +414,6 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         print("Pop up no encontrado")
     try:
 
-<<<<<<< HEAD
         try:
             wait(driver, 64).until(ec.presence_of_element_located( (By.XPATH, './/main[ contains( @class , "product-content" ) ]' ) ))
             df_producto = driver.find_element( By.XPATH, './/main[ contains( @class , "product-content" ) ]' )
@@ -422,12 +421,6 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             print("Timeout al intentar encontrar el elemento en la página.")
             
         try:
-=======
-        wait(driver, 64).until(ec.presence_of_element_located( (By.XPATH, './/main[ contains( @class , "product-content" ) ]' ) ))
-        df_producto = driver.find_element( By.XPATH, './/main[ contains( @class , "product-content" ) ]' )
-
-        try:
->>>>>>> c19c95473e9b2c45219ec02b4802a5a0a2bfd5f6
             id_url = df_producto.find_element( By.XPATH, '//div[ contains( @class,"derecha") ]/.//span[ contains( @class,"product-code") ]' ).text
         except:
             id_url = ''
@@ -460,21 +453,13 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             
             try:
                 normal_price = df_producto.find_elements( By.XPATH, '//div[ contains( @class,"derecha") ]/.//*[@id="scraping-tmp"]' )[0].text
-<<<<<<< HEAD
                 #normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
-=======
-                normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
->>>>>>> c19c95473e9b2c45219ec02b4802a5a0a2bfd5f6
             except:
                 normal_price = ''
             
             try:
                 internet_price = df_producto.find_elements(By.XPATH, '//div[ contains( @class,"derecha") ]/.//*[@id="scraping-tmp"]')[0].text
-<<<<<<< HEAD
                 # internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
-=======
-                internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
->>>>>>> c19c95473e9b2c45219ec02b4802a5a0a2bfd5f6
             except:
                 internet_price = ''
 
@@ -658,17 +643,3 @@ def export_reports(pais:str,ruta:str,df1:pd.DataFrame,df2:pd.DataFrame,df3:pd.Da
 
     #except:
     #    print('Reports not export')
-<<<<<<< HEAD
-=======
-
-if __name__ == "__main__":
-    
-    ulr = 'https://www.jumbo.cl/atun-lomitos-en-aceite-104-g-drenado-cuisine-and-co-1828066/p'
-    pais = "Chile"
-
-    ulr = 'https://www.jumbo.cl/caja-cer-royal-guard-bot-24x330cc-5-1964136-pak/p'
-
-    ulr = 'https://www.jumbo.cl/salmon-granel/p'
-
-    print( get_scraping_sku( pais , [ulr] ) )
->>>>>>> c19c95473e9b2c45219ec02b4802a5a0a2bfd5f6
