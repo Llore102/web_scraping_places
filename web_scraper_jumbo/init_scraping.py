@@ -4,6 +4,7 @@
 
 import os
 import errno
+import re
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -25,13 +26,13 @@ import pandas as pd
 pais = 'CL'
 actual_date = str(datetime.now())[0:10].replace('-','')
 ruta = os.path.dirname(os.path.abspath(__file__)) + '/Output/'
-ruta_actual = ruta+actual_date+'/'
+# ruta_actual = ruta+actual_date+'/'
 
-try:
-    os.mkdir(ruta_actual)
-except OSError as e:
-    if e.errno != errno.EEXIST:
-        raise
+# try:
+#     os.mkdir(ruta_actual)
+# except OSError as e:
+#     if e.errno != errno.EEXIST:
+#         raise
 
 def scraping():
     
@@ -48,7 +49,7 @@ def scraping():
 
     df_categories.to_excel(ruta + f'df_categorias_jumbo.xlsx'.format(actual_date), index=0)
 
-    df_categories.to_excel(ruta_actual + f'df_categorias_jumbo'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
+    # df_categories.to_excel(ruta_actual + f'df_categorias_jumbo'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
 
     print('')
     print('Total de categorias Jumbo: ' + str(n_categories))
@@ -83,7 +84,7 @@ def scraping():
 
         pd.DataFrame(total_url_cat, columns=['url', 'first_category', 'second_category', 'third_category']).to_excel(ruta + f'df_pages_categories_'+str(cat1)+'_jumbo.xlsx'.format(actual_date), index=0)
 
-        pd.DataFrame(total_url_cat, columns=['url', 'first_category', 'second_category', 'third_category']).to_excel(ruta_actual + f'df_pages_categories_'+str(cat1)+'_jumbo'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
+        # pd.DataFrame(total_url_cat, columns=['url', 'first_category', 'second_category', 'third_category']).to_excel(ruta_actual + f'df_pages_categories_'+str(cat1)+'_jumbo'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
 
         ###- Extracción URL Producto
 
@@ -94,7 +95,7 @@ def scraping():
 
         total_url_sku.to_excel(ruta + f'df_info_products_'+str(cat1)+'_jumbo.xlsx'.format(actual_date), index=0)
 
-        total_url_sku.to_excel(ruta_actual + f'df_info_products_'+str(cat1)+'_jumbo'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
+        # total_url_sku.to_excel(ruta_actual + f'df_info_products_'+str(cat1)+'_jumbo'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
 
         ###- Total de categorías validas
 
@@ -124,9 +125,31 @@ def scraping():
 
         df_producto_t = st.get_df_scraping(pais, url_sku_list)
 
+        def clean_text(text):
+            # Define una lista de patrones de texto problemático que deseas eliminar
+            problematic_patterns = [
+                r'\0',        # Caracter nulo
+                r'\r\n',      # Salto de línea (Windows)
+                r'\n',        # Salto de línea (Unix)
+                r'▲',         # Carácter específico
+                r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]',  # Caracteres de control y otros caracteres especiales
+                r'\bLa exclusiva fórmula de Lysoform.*pisos\b' # Patrón específico de texto
+            ]
+            
+            # Elimina los patrones de texto problemático
+            cleaned_text = text
+            for pattern in problematic_patterns:
+                cleaned_text = re.sub(pattern, '', cleaned_text)
+            
+            return cleaned_text
+
+        # Aplica la función a la columna que está causando el problema
+        df_producto_t = df_producto_t.applymap(clean_text)
+
+
         df_producto_t.to_excel(ruta + f'results_ws_'+str(cat1)+'_jumbo.xlsx'.format(actual_date), index=0)
 
-        df_producto_t.to_excel(ruta_actual + f'results_ws_'+str(cat1)+'_jumbo'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
+        # df_producto_t.to_excel(ruta_actual + f'results_ws_'+str(cat1)+'_jumbo'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
 
 
         #################################################
@@ -137,7 +160,7 @@ def scraping():
 
         df_report.to_excel(ruta + f'REPORTE_WS_'+str(cat1)+'_JUMBO.xlsx'.format(actual_date), index=0)
 
-        df_report.to_excel(ruta_actual + f'REPORTE_WS_'+str(cat1)+'_JUMBO'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
+        # df_report.to_excel(ruta_actual + f'REPORTE_WS_'+str(cat1)+'_JUMBO'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
 
 
         #################################################

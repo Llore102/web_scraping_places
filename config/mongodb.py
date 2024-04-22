@@ -18,7 +18,7 @@ async def insert_data_products(csv_file_path: str):
 
         # Convertir campos específicos con cadenas vacías a 0
         numeric_columns_to_convert = [
-            'score_tottus', 'precio_tottus',
+            # 'score_tottus', 'precio_tottus',
             'score_lider', 'precio_lider',
             'score_jumbo', 'precio_jumbo'
         ]

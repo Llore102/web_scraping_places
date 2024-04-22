@@ -518,7 +518,3 @@ def export_reports(pais:str,ruta:str,df1:pd.DataFrame,df2:pd.DataFrame,df3:pd.Da
 
     #except:
     #    print('Reports not export')
-
-if __name__ == "__main__":
-    
-    get_info_category()
