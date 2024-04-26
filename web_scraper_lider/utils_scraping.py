@@ -197,56 +197,82 @@ def get_pages_categories(pais:str, df_categories:pd.DataFrame):
     return(pd.DataFrame(list_res, columns=['url_category', 'first_level_category', 'second_level_category', 'third_level_category']).drop_duplicates().values.tolist())
 
 def get_info_product(pais:str, list_pages_category:list):
-
-    driver = get_driver_with_retry()
-
-    url_category = list()
-    name_product = list()
-    url_product = list()
-    first_level_category = list()
-    second_level_category = list()
-    third_level_category = list()
-
-    driver.get( list_pages_category[0] )
-
+    
+    driver = None
     try:
+        driver = get_driver_with_retry()
 
-        wait( driver, 16).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')))
-        sku = driver.find_elements("xpath", './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')
+        df_url_sku = pd.DataFrame()
+
+        url_category = list()
+        name_product = list()
+        url_product = list()
+        first_level_category = list()
+        second_level_category = list()
+        third_level_category = list()
         
-        for producto in sku:
-            url_category.append( list_pages_category[0] )
+        print( f"Url Categoria: {list_pages_category[0]}" )
+
+        driver.get( list_pages_category[0] )
+
+        try:
+
+            wait( driver, 16).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')))
+            sku = driver.find_elements("xpath", './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')
             
-            indiv_nombre_product = producto.find_element( "xpath" , './/div[@class="product-card_description-wrapper"]/div/span[2]' ).text
-            indiv_url_producto = producto.find_element("xpath", ".//a").get_attribute("href")
+            for producto in sku:
+                url_category.append( list_pages_category[0] )
+                
+                indiv_nombre_product = producto.find_element( "xpath" , './/div[@class="product-card_description-wrapper"]/div/span[2]' ).text
+                indiv_url_producto = producto.find_element("xpath", ".//a").get_attribute("href")
 
-            name_product.append( indiv_nombre_product )
-            url_product.append( indiv_url_producto )
+                name_product.append( indiv_nombre_product )
+                url_product.append( indiv_url_producto )
 
-            first_level_category.append(list_pages_category[1])
-            second_level_category.append(list_pages_category[2])
-            third_level_category.append(list_pages_category[3])
+                first_level_category.append(list_pages_category[1])
+                second_level_category.append(list_pages_category[2])
+                third_level_category.append(list_pages_category[3])
 
-    except:
-        print('ERROR: url not found')
-    
-    df_url_sku = pd.DataFrame()
+        except Exception as error:
+            raise error
 
-    df_url_sku['url_category'] = url_category
-    df_url_sku['name_product'] = name_product
-    df_url_sku['url_product'] = url_product
-    df_url_sku['first_level_category'] = first_level_category
-    df_url_sku['second_level_category'] = second_level_category
-    df_url_sku['third_level_category'] = third_level_category
-    
-    driver.close()
+        df_url_sku['url_category'] = url_category
+        df_url_sku['name_product'] = name_product
+        df_url_sku['url_product'] = url_product
+        df_url_sku['first_level_category'] = first_level_category
+        df_url_sku['second_level_category'] = second_level_category
+        df_url_sku['third_level_category'] = third_level_category
+        
+    except Exception as error:
+        
+        print( error )
+
+        df_url_sku['url_category'] = list()
+        df_url_sku['name_product'] = list()
+        df_url_sku['url_product'] = list()
+        df_url_sku['first_level_category'] = list()
+        df_url_sku['second_level_category'] = list()
+        df_url_sku['third_level_category'] = list()
+
+    finally:
+        if driver != None:
+            driver.close()
+            driver.quit()
+            print("Cerrando Driver...")
+        driver = None
+
     return(df_url_sku.drop_duplicates())
 
 def get_info_products(pais:str, df_info_category:list):
+    
+    cant_nuclos_disponibles = n
+    if cant_nuclos_disponibles>=4:
+        cant_nuclos_disponibles = 4
 
-    with mp.Pool(n) as pool:
+    with mp.Pool( cant_nuclos_disponibles ) as pool:
         iterable = [(pais, i) for i in df_info_category]
-        results = list(tqdm(pool.istarmap(get_info_product, iterable), total=len(iterable)))
+        results = list(tqdm(pool.starmap(get_info_product, iterable), total=len(iterable)))
+        input("Espera...")
         pool.close()
         pool.join()
     
