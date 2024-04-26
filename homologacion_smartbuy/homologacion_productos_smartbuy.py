@@ -14,6 +14,10 @@ from config.s3_aws import s3_client
 from config.mongodb import insert_data_products
 sw = stopwords.words('spanish')
 
+import nltk
+nltk.download('punkt')
+
+
 #from thefuzz import fuzz
 #from thefuzz import process
 
@@ -156,6 +160,7 @@ def homologacion():
     filenames = glob.glob(ruta[:-22] + "/web_scraper_lider/Output/REPORTE_WS_*")
     df_lider = pd.concat(pd.read_excel(file, converters={'internet_price':str}) for file in filenames).reset_index(drop=True)
     df_lider['id_smart'] = 'L' + df_lider['id'].fillna('item 0').map(lambda x:x[5:])
+    #df_lider['id_smart'] = 'L' + df_lider['id'].fillna('0').astype(str).map(lambda x: x[5:])
     df_lider['name'] = df_lider['name'].astype(str).replace('nan', 'no info')
     df_lider['description'] = df_lider['description'].astype(str).replace('nan', 'no info')
     df_lider['marca'] = df_lider['attributes'].astype(str).str.lower().str.replace('á', 'a').str.replace('é', 'e').str.replace('í', 'i').str.replace('ó', 'o').str.replace('ú', 'u').replace('nan', 'no info')
@@ -470,8 +475,10 @@ def homologacion():
     fecha_creacion = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     nombre_archivo_parquet = f"df_matching_{fecha_creacion}.parquet"
 
-    df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa', 'name_tottus', 'score_tottus', 'marca_tottus', 'formato_tottus', 'precio_tottus', 'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_csv(ruta + f'/df_matching.csv', index=False, sep=';')
-    df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa', 'name_tottus', 'score_tottus', 'marca_tottus', 'formato_tottus', 'precio_tottus', 'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_parquet(nombre_archivo_parquet, index=False)
+    # df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa', 'name_tottus', 'score_tottus', 'marca_tottus', 'formato_tottus', 'precio_tottus', 'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_csv(ruta + f'/df_matching.csv', index=False, sep=';')
+    # df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa', 'name_tottus', 'score_tottus', 'marca_tottus', 'formato_tottus', 'precio_tottus', 'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_parquet(nombre_archivo_parquet, index=False)
+    df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa',  'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_csv(ruta + f'/df_matching.csv', index=False, sep=';')
+    df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa',  'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_parquet(nombre_archivo_parquet, index=False)
 
 
     ##! LEER Y GUARDAR DATOS EN LA DB

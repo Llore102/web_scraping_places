@@ -541,6 +541,7 @@ def export_reports(pais:str,ruta:str,df1:pd.DataFrame,df2:pd.DataFrame,df3:pd.Da
     print('')
 
     #except:
+<<<<<<< HEAD
     #    print('Reports not export')
 
 if __name__ == "__main__":
