@@ -272,7 +272,6 @@ def get_info_products(pais:str, df_info_category:list):
     with mp.Pool( cant_nuclos_disponibles ) as pool:
         iterable = [(pais, i) for i in df_info_category]
         results = list(tqdm(pool.starmap(get_info_product, iterable), total=len(iterable)))
-        input("Espera...")
         pool.close()
         pool.join()
     
