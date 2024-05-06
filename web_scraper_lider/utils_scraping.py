@@ -1,22 +1,23 @@
-# from chromedriver_py import binary_path
+from chromedriver_py import binary_path
 
 import multiprocessing as mp
 # import istarmap  # import to apply patch
 from web_scraper_lider.istarmap import istarmap
-
 from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 import multiprocessing as mp
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
 
 from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
-# from selenium import webdriver
-# from webdriver_manager.chrome import ChromeDriverManager
-# from selenium.webdriver.chrome.service import Service
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 import re
 
 from datetime import datetime
@@ -27,8 +28,7 @@ from io import BytesIO
 
 import time
 import psutil
-from driver.driver import get_driver_with_retry
-from driver import get_driver_with_retry
+# from driver.driver import get_driver_with_retry
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -44,26 +44,21 @@ try:
 except RuntimeError:
    pass
 
-#headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)Chrome/79.0.3945.117 Safari/537.36"}
+def get_driver():
+    chrome_options = Options()
+    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-gpu")
+    # chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    prefs = {"profile.default_content_setting_values.notifications" : 2}
+    chrome_options.add_experimental_option("prefs",prefs)
+    s = ChromeService(binary_path)
+    driver = webdriver.Chrome(service=s, options=chrome_options)
+    driver.maximize_window()
+    return driver
 
-#def get_driver_with_retry():
-#    chrome_options = webdriver.ChromeOptions()
-#    chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
-#    chrome_options.add_argument("--window-size=1920,1080")  # Establecer el tamaño de la ventana
-#    chrome_options.add_argument("--start-maximized")  # Maximizar la ventana al abrirse
-#    chrome_options.add_argument("--disable-infobars")  # Deshabilitar la barra de información
-#    chrome_options.add_argument("--disable-extensions")  # Deshabilitar las extensiones del navegador
-#    chrome_options.add_argument("--disable-gpu")  # Deshabilitar la aceleración de GPU
-#    chrome_options.add_argument("--disable-dev-shm-usage")  # Deshabilitar el uso compartido de memoria
-#    chrome_options.add_argument("--no-sandbox") 
-    # chrome_options.add_argument("--headless")  # Opcional: para ejecución en segundo plano
-
-            # Instanciar el controlador de Chrome y pasar las opciones como argumento
-#    selenium_service = Service(ChromeDriverManager().install())
-#    driver = webdriver.Chrome(service=selenium_service, options=chrome_options)
-#    driver.maximize_window()
-#    return driver
-
+# manager = WebDriverManager()
 
 def get_url_lider():
     
@@ -72,87 +67,68 @@ def get_url_lider():
     return(url_lider)
 
 def get_info_category():
-    
-    driver = get_driver_with_retry()
-    
-    #Vamos a la dirección web de la página objetivo
-    driver.get( get_url_lider() )
+    driver = get_driver()
+    driver.get(get_url_lider())
 
     time.sleep(20)
     driver.save_screenshot('screenshotL.png')
 
     list_categories = []
 
-    #Obtener las categorías
     try:
-        
         wait(driver, 10).until(ec.element_to_be_clickable((By.XPATH, ".//header//button[text()='Categorías']")))
-        driver.find_element( By.XPATH , ".//header//button[text()='Categorías']" ).click()
+        driver.find_element(By.XPATH, ".//header//button[text()='Categorías']").click()
 
         wait(driver, 10).until(ec.element_to_be_clickable((By.XPATH, './/div[@data-testid="main-categories-test-id"]')))
         first_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]/div')
-                
+
         for first in first_level_categories:
-            
             div_desplazable = driver.find_element("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]')
             driver.execute_script( "arguments[0].scrollTop = arguments[1];" , div_desplazable , 0 )
             posicion_y = first.location['y']
             driver.execute_script( "arguments[0].scrollTop = arguments[1];" , div_desplazable , posicion_y )
             first_level_category = first.text
-            
-            #click en la categoria
             first.click()
-            
             time.sleep(2)
             second_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__ThirdLevelSection")]/div/a')
-            
+
             for second in second_level_categories:
-                
                 second_level_category = second.text
                 url_second_level_category = second.get_attribute("href")
 
-                second = second.find_element("xpath", "..") #volvemos al div padre
+                second = second.find_element("xpath", "..")  # volvemos al div padre
+                element_third_level_categorie = second.find_elements("xpath", "div/a")  # tomamos el primer elemento
 
-                element_third_level_categorie = second.find_elements("xpath", "div/a") #tomamos el primer elemento
-                            
-                intento_correcto = False
-                for intento_subcategoria in element_third_level_categorie:
-                    
+                if element_third_level_categorie:
+                    subcategory = element_third_level_categorie[0]
                     try:
-                        driver_aux = get_driver_with_retry()
-                        driver_aux.get( intento_subcategoria.get_attribute("href") )
-                        
+                        driver_aux = get_driver()
+                        driver_aux.get(subcategory.get_attribute("href"))
                         wait(driver_aux, 10).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
-                        third_level_categories = driver_aux.find_elements( "xpath" , './/ul[@class="sister-categories__list"]/li/a' )
+                        third_level_categories = driver_aux.find_elements("xpath", './/ul[@class="sister-categories__list"]/li/a')
 
                         for third in third_level_categories:
-                            
                             third_level_category = third.text
                             url_third_level_category = third.get_attribute("href")
-                            
                             list_categories.append([first_level_category, second_level_category, url_second_level_category, third_level_category, url_third_level_category])
-                        
-                        intento_correcto = True
 
-                    except:
-                        intento_correcto = False
-
+                    except TimeoutException:
+                        print("Timeout al cargar las subcategorías")
                     finally:
                         driver_aux.quit()
+                else:
+                    list_categories.append([first_level_category, second_level_category, url_second_level_category, None, None])
 
-                    if intento_correcto == True:
-                        break
-                    
     except TimeoutException:
-        print("Categorias no encontradas")
+        print("Categorías no encontradas")
     finally:
         driver.quit()
 
-    return(pd.DataFrame(list_categories, columns = ['first_level_category', 'second_level_category', 'url_second_level_category', 'third_level_category', 'url_third_level_category']), len(list_categories))
+    return pd.DataFrame(list_categories, columns=['first_level_category', 'second_level_category', 'url_second_level_category', 'third_level_category', 'url_third_level_category']), len(list_categories)
 
 def get_pages_category(pais:str, i:str, first:str, second:str, third:str):
 
-    driver = get_driver_with_retry()
+    driver = get_driver()
 
     total_url_cat = list()
 
@@ -176,8 +152,9 @@ def get_pages_category(pais:str, i:str, first:str, second:str, third:str):
         else:
             total_url_cat.append([i, first, second, third])
     
-    except:
-        total_url_cat.append([i, first, second, third])
+    except TimeoutException:
+        # total_url_cat.append([i, first, second, third])
+        print("Pagina no encontradas")
         
     driver.close()
     
@@ -199,76 +176,54 @@ def get_pages_categories(pais:str, df_categories:pd.DataFrame):
     return(pd.DataFrame(list_res, columns=['url_category', 'first_level_category', 'second_level_category', 'third_level_category']).drop_duplicates().values.tolist())
 
 def get_info_product(pais:str, list_pages_category:list):
-    
-    driver = None
+
+    driver = get_driver()
+
+    url_category = list()
+    name_product = list()
+    url_product = list()
+    first_level_category = list()
+    second_level_category = list()
+    third_level_category = list()
+
+    driver.get( list_pages_category[0] )
+
     try:
-        driver = get_driver_with_retry()
 
-        df_url_sku = pd.DataFrame()
-
-        url_category = list()
-        name_product = list()
-        url_product = list()
-        first_level_category = list()
-        second_level_category = list()
-        third_level_category = list()
-
-        driver.get( list_pages_category[0] )
-
-        try:
-
-            wait( driver, 16).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')))
-            sku = driver.find_elements("xpath", './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')
+        wait( driver, 64).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')))
+        sku = driver.find_elements("xpath", './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')
+        
+        for producto in sku:
+            url_category.append( list_pages_category[0] )
             
-            for producto in sku:
-                url_category.append( list_pages_category[0] )
-                
-                indiv_nombre_product = producto.find_element( "xpath" , './/div[@class="product-card_description-wrapper"]/div/span[2]' ).text
-                indiv_url_producto = producto.find_element("xpath", ".//a").get_attribute("href")
+            indiv_nombre_product = producto.find_element( "xpath" , './/div[@class="product-card_description-wrapper"]/div/span[2]' ).text
+            indiv_url_producto = producto.find_element("xpath", ".//a").get_attribute("href")
 
-                name_product.append( indiv_nombre_product )
-                url_product.append( indiv_url_producto )
+            name_product.append( indiv_nombre_product )
+            url_product.append( indiv_url_producto )
 
-                first_level_category.append(list_pages_category[1])
-                second_level_category.append(list_pages_category[2])
-                third_level_category.append(list_pages_category[3])
+            first_level_category.append(list_pages_category[1])
+            second_level_category.append(list_pages_category[2])
+            third_level_category.append(list_pages_category[3])
 
-        except Exception as error:
-            raise error
+    except:
+        print('ERROR: url not found')
+    
+    df_url_sku = pd.DataFrame()
 
-        df_url_sku['url_category'] = url_category
-        df_url_sku['name_product'] = name_product
-        df_url_sku['url_product'] = url_product
-        df_url_sku['first_level_category'] = first_level_category
-        df_url_sku['second_level_category'] = second_level_category
-        df_url_sku['third_level_category'] = third_level_category
-        
-    except Exception as error:
-        
-        print( error )
-
-        df_url_sku['url_category'] = list()
-        df_url_sku['name_product'] = list()
-        df_url_sku['url_product'] = list()
-        df_url_sku['first_level_category'] = list()
-        df_url_sku['second_level_category'] = list()
-        df_url_sku['third_level_category'] = list()
-
-    finally:
-        if driver != None:
-            driver.close()
-            driver.quit()
-        driver = None
-
+    df_url_sku['url_category'] = url_category
+    df_url_sku['name_product'] = name_product
+    df_url_sku['url_product'] = url_product
+    df_url_sku['first_level_category'] = first_level_category
+    df_url_sku['second_level_category'] = second_level_category
+    df_url_sku['third_level_category'] = third_level_category
+    
+    driver.close()
     return(df_url_sku.drop_duplicates())
 
 def get_info_products(pais:str, df_info_category:list):
-    
-    cant_nuclos_disponibles = n
-    if cant_nuclos_disponibles>=4:
-        cant_nuclos_disponibles = 4
 
-    with mp.Pool( cant_nuclos_disponibles ) as pool:
+    with mp.Pool(n) as pool:
         iterable = [(pais, i) for i in df_info_category]
         results = list(tqdm(pool.istarmap(get_info_product, iterable), total=len(iterable)))
         pool.close()
@@ -288,14 +243,15 @@ def validate_url_cat(total_url_sku:pd.DataFrame, df_categories:pd.DataFrame):
 
 def get_scraping_sku(pais_sku:str, url_sku:list):
 
-    driver = get_driver_with_retry()
+    driver = get_driver()
 
+    
     driver.get(url_sku[0])
 
     try:
         
         try:
-            wait(driver, 64).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
+            wait(driver, 30).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
             df_producto = driver.find_element( By.XPATH, './/div[@class="product-detail-card__product-detail-container"]')
         except TimeoutException:
             print("Timeout al intentar encontrar el elemento en la página.")  
@@ -467,8 +423,11 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
         category_1 = ''
         category_2 = ''
     
-    driver.close()
-    
+    try:
+        driver.close()
+    except Exception as e:
+        print("Ocurrió un error al intentar cerrar el navegador:", e)
+        
     return pais_sku, url_sku[0], id_url, name_url, description_url, id_client_sku, cod_sku, first, second, third, category_1, category_2, atr_sku, normal_price, internet_price, cmr_price, image_info_1, image_info_2
 
 def get_df_scraping(pais:str, list_url:list):
@@ -541,15 +500,4 @@ def export_reports(pais:str,ruta:str,df1:pd.DataFrame,df2:pd.DataFrame,df3:pd.Da
     print('')
 
     #except:
-<<<<<<< HEAD
     #    print('Reports not export')
-
-if __name__ == "__main__":
-
-    #list_categories = [ [ "https://www.lider.cl/supermercado/category/Frescos_y_L%C3%A1cteos/Masas_Refrigeradas/Tapa_Empanada","1-categoria","2-categoria","3-categoria"] ]
-    #list_categories += list_categories
-    #list_categories += list_categories
-    #list_categories += list_categories[0:2]
-
-    #get_info_products( "Chile" , list_categories )
-    pass
