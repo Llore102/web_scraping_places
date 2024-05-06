@@ -14,8 +14,6 @@ from config.s3_aws import s3_client
 from config.mongodb import insert_data_products
 sw = stopwords.words('spanish')
 
-import nltk
-nltk.download('punkt')
 
 
 #from thefuzz import fuzz
