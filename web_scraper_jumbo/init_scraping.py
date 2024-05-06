@@ -14,7 +14,8 @@ warnings.filterwarnings('ignore')
 #################################################
 
 # import utils_scraping as st
-from web_scraper_jumbo import utils_scraping as st
+# from web_scraper_jumbo import utils_scraping as st
+import web_scraper_jumbo.utils_scraping as st
 
 from datetime import datetime
 import pandas as pd

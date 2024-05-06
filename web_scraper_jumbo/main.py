@@ -3,7 +3,8 @@ from datetime import date, datetime
 import warnings
 warnings.filterwarnings('ignore')
 import os
-from .init_scraping import scraping
+# from web_scraper_jumbo.init_scraping import scraping
+from web_scraper_jumbo.init_scraping import scraping
 
 
 #################################################
