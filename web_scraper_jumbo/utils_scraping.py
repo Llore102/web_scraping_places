@@ -432,7 +432,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
                 id_client_sku = ''
 
             try:
-                cod_sku = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div/div[4]/div/div/main/div[2]/div/div[3]/div/span/text()[2]'))[0].text
+                cod_sku = df_producto.find_element( By.XPATH, '//div[ contains( @class,"derecha") ]/.//span[ contains( @class,"product-code") ]' ).text
             except:
                 cod_sku = ''
 

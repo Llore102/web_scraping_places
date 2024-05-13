@@ -2,9 +2,9 @@ from chromedriver_py import binary_path
 
 import multiprocessing as mp
 # import istarmap  # import to apply patch
-from web_scraper_lider.istarmap import istarmap
+import web_scraper_lider.istarmap
 from selenium.webdriver.support.ui import WebDriverWait as wait
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 import multiprocessing as mp
@@ -44,17 +44,27 @@ try:
 except RuntimeError:
    pass
 
-def get_driver():
+def get_driver_aux():
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-gpu")
-    # chrome_options.add_argument("--remote-debugging-port=9222")
-    chrome_options.add_argument("--disable-dev-shm-usage")
+    # chrome_options.add_argument("--headless")
     prefs = {"profile.default_content_setting_values.notifications" : 2}
     chrome_options.add_experimental_option("prefs",prefs)
+
     s = ChromeService(binary_path)
     driver = webdriver.Chrome(service=s, options=chrome_options)
+
+    driver.maximize_window()
+    return driver
+
+def get_driver():
+    chrome_options = Options()
+    # chrome_options.add_argument("--headless")
+    prefs = {"profile.default_content_setting_values.notifications" : 2}
+    chrome_options.add_experimental_option("prefs",prefs)
+
+    s = ChromeService(binary_path)
+    driver = webdriver.Chrome(service=s, options=chrome_options)
+
     driver.maximize_window()
     return driver
 
@@ -67,19 +77,27 @@ def get_url_lider():
     return(url_lider)
 
 def get_info_category():
-    driver = get_driver()
+    chrome_options = Options()
+    # chrome_options.add_argument("--headless")
+    prefs = {"profile.default_content_setting_values.notifications" : 2}
+    chrome_options.add_experimental_option("prefs",prefs)
+
+    s = ChromeService(binary_path)
+    driver = webdriver.Chrome(service=s, options=chrome_options)
+
+    driver.maximize_window()
     driver.get(get_url_lider())
 
-    time.sleep(20)
+    time.sleep(10)
     driver.save_screenshot('screenshotL.png')
 
     list_categories = []
 
     try:
-        wait(driver, 10).until(ec.element_to_be_clickable((By.XPATH, ".//header//button[text()='Categorías']")))
+        wait(driver, 8).until(ec.element_to_be_clickable((By.XPATH, ".//header//button[text()='Categorías']")))
         driver.find_element(By.XPATH, ".//header//button[text()='Categorías']").click()
 
-        wait(driver, 10).until(ec.element_to_be_clickable((By.XPATH, './/div[@data-testid="main-categories-test-id"]')))
+        wait(driver, 8).until(ec.element_to_be_clickable((By.XPATH, './/div[@data-testid="main-categories-test-id"]')))
         first_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]/div')
 
         for first in first_level_categories:
@@ -102,7 +120,7 @@ def get_info_category():
                 if element_third_level_categorie:
                     subcategory = element_third_level_categorie[0]
                     try:
-                        driver_aux = get_driver()
+                        driver_aux = get_driver_aux()
                         driver_aux.get(subcategory.get_attribute("href"))
                         wait(driver_aux, 10).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
                         third_level_categories = driver_aux.find_elements("xpath", './/ul[@class="sister-categories__list"]/li/a')
@@ -115,48 +133,57 @@ def get_info_category():
                     except TimeoutException:
                         print("Timeout al cargar las subcategorías")
                     finally:
-                        driver_aux.quit()
+                        driver_aux.close()
                 else:
                     list_categories.append([first_level_category, second_level_category, url_second_level_category, None, None])
 
     except TimeoutException:
         print("Categorías no encontradas")
     finally:
+        
         driver.quit()
 
     return pd.DataFrame(list_categories, columns=['first_level_category', 'second_level_category', 'url_second_level_category', 'third_level_category', 'url_third_level_category']), len(list_categories)
 
 def get_pages_category(pais:str, i:str, first:str, second:str, third:str):
 
-    driver = get_driver()
-
-    total_url_cat = list()
-
-    driver.get(i)
-    
-    time.sleep(3)
-
     try:
 
-        wait(driver, 16).until(ec.visibility_of_element_located((By.CLASS_NAME, "products-qantity-and-order-desktop__quantity-shown")))
-        per_page_count = driver.find_elements(By.CLASS_NAME, "products-qantity-and-order-desktop__quantity-shown")[0].text
-        per_page_count_list = [int(s) for s in re.findall(r'-?\d+\.?\d*', per_page_count)]
-        per_page = per_page_count_list[1]
-        count = per_page_count_list[2]
-        n_paginas = int(np.ceil(count/per_page))
+        driver = get_driver()
+
+        total_url_cat = list()
+
+        # driver.maximize_window()
+
+        driver.get(i)
         
-        if n_paginas>1:
-            url_cat_page = [[i + '?page=' + str(j) + '&hitsPerPage=16', first, second, third] for j in range(2, n_paginas+1)]
-            total_url_cat.append([i, first, second, third])
-            total_url_cat.extend(url_cat_page)
-        else:
-            total_url_cat.append([i, first, second, third])
-    
-    except TimeoutException:
-        # total_url_cat.append([i, first, second, third])
-        print("Pagina no encontradas")
+        time.sleep(3)
+
+        try:
+
+            wait(driver, 16).until(ec.visibility_of_element_located((By.CLASS_NAME, "products-qantity-and-order-desktop__quantity-shown")))
+            per_page_count = driver.find_elements(By.CLASS_NAME, "products-qantity-and-order-desktop__quantity-shown")[0].text
+            per_page_count_list = [int(s) for s in re.findall(r'-?\d+\.?\d*', per_page_count)]
+            per_page = per_page_count_list[1]
+            count = per_page_count_list[2]
+            n_paginas = int(np.ceil(count/per_page))
+            
+            if n_paginas>1:
+                url_cat_page = [[i + '?page=' + str(j) + '&hitsPerPage=16', first, second, third] for j in range(2, n_paginas+1)]
+                total_url_cat.append([i, first, second, third])
+                total_url_cat.extend(url_cat_page)
+            else:
+                total_url_cat.append([i, first, second, third])
         
-    driver.close()
+        except:
+            total_url_cat.append([i, first, second, third])
+            
+    except WebDriverException as e:
+            print("Error en WebDriver:", e)
+    except Exception as e:
+            print("Error:", e)
+    finally:
+        driver.quit()
     
     return(total_url_cat)
 
@@ -176,9 +203,6 @@ def get_pages_categories(pais:str, df_categories:pd.DataFrame):
     return(pd.DataFrame(list_res, columns=['url_category', 'first_level_category', 'second_level_category', 'third_level_category']).drop_duplicates().values.tolist())
 
 def get_info_product(pais:str, list_pages_category:list):
-
-    driver = get_driver()
-
     url_category = list()
     name_product = list()
     url_product = list()
@@ -186,39 +210,50 @@ def get_info_product(pais:str, list_pages_category:list):
     second_level_category = list()
     third_level_category = list()
 
-    driver.get( list_pages_category[0] )
+    driver = None
+
 
     try:
+        driver = get_driver()
+        # driver.maximize_window()
+        driver.get(list_pages_category[0])
+        time.sleep(3)
 
-        wait( driver, 64).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')))
-        sku = driver.find_elements("xpath", './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')
-        
-        for producto in sku:
-            url_category.append( list_pages_category[0] )
+        try:
+
+            wait( driver, 64).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')))
+            sku = driver.find_elements("xpath", './/ul[@class="ais-Hits-list"]//li[@class="ais-Hits-item"]')
             
-            indiv_nombre_product = producto.find_element( "xpath" , './/div[@class="product-card_description-wrapper"]/div/span[2]' ).text
-            indiv_url_producto = producto.find_element("xpath", ".//a").get_attribute("href")
+            for producto in sku:
+                url_category.append( list_pages_category[0] )
+                
+                indiv_nombre_product = producto.find_element( "xpath" , './/div[@class="product-card_description-wrapper"]/div/span[2]' ).text
+                indiv_url_producto = producto.find_element("xpath", ".//a").get_attribute("href")
 
-            name_product.append( indiv_nombre_product )
-            url_product.append( indiv_url_producto )
+                name_product.append( indiv_nombre_product )
+                url_product.append( indiv_url_producto )
 
-            first_level_category.append(list_pages_category[1])
-            second_level_category.append(list_pages_category[2])
-            third_level_category.append(list_pages_category[3])
+                first_level_category.append(list_pages_category[1])
+                second_level_category.append(list_pages_category[2])
+                third_level_category.append(list_pages_category[3])
 
-    except:
-        print('ERROR: url not found')
+        except TimeoutException:
+            print('ERROR: Timeout waiting for element')
+        except WebDriverException as e:
+            print('ERROR: WebDriverException -', e)
+    except Exception as e:
+        print('ERROR:', e)
+    finally:
+        if driver is not None:
+            driver.quit()
+
+    # Filtrar filas con valores vacíos
+    data = list(zip(url_category, name_product, url_product, first_level_category, second_level_category, third_level_category))
+    filtered_data = [row for row in data if all(row)]
+
+    # Crear DataFrame con filas filtradas
+    df_url_sku = pd.DataFrame(filtered_data, columns=['url_category', 'name_product', 'url_product', 'first_level_category', 'second_level_category', 'third_level_category'])
     
-    df_url_sku = pd.DataFrame()
-
-    df_url_sku['url_category'] = url_category
-    df_url_sku['name_product'] = name_product
-    df_url_sku['url_product'] = url_product
-    df_url_sku['first_level_category'] = first_level_category
-    df_url_sku['second_level_category'] = second_level_category
-    df_url_sku['third_level_category'] = third_level_category
-    
-    driver.close()
     return(df_url_sku.drop_duplicates())
 
 def get_info_products(pais:str, df_info_category:list):
@@ -243,190 +278,213 @@ def validate_url_cat(total_url_sku:pd.DataFrame, df_categories:pd.DataFrame):
 
 def get_scraping_sku(pais_sku:str, url_sku:list):
 
-    driver = get_driver()
-
-    
-    driver.get(url_sku[0])
+    id_url = ''
+    name_url = ''
+    description_url = ''
+    atr_sku = ''
+    normal_price = ''
+    internet_price = ''
+    cmr_price = ''
+    id_client_sku = ''
+    cod_sku = ''
+    image_info_1 = ''
+    image_info_2 = ''
+    first = ''
+    second = ''
+    third = ''
+    category_1 = ''
+    category_2 = ''
+    driver = None
 
     try:
+        driver = get_driver()
+
         
-        try:
-            wait(driver, 30).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
-            df_producto = driver.find_element( By.XPATH, './/div[@class="product-detail-card__product-detail-container"]')
-        except TimeoutException:
-            print("Timeout al intentar encontrar el elemento en la página.")  
-        try:
-            id_url = df_producto.find_element(By.XPATH, './/span[@class="product-detail-card__product-item-number"]' ).text
-            # id_url = id_url.replace("item","").replace(" ","")
-        except:
-            id_url = ''
-        
-        try: 
-            name_url = df_producto.find_element(By.XPATH, './/h1[@class="product-detail-display-name"]' ).text
-        except:
-            name_url = ''
-
+        driver.get(url_sku[0])
 
         try:
-            div_detalles_producto = driver.find_element( By.XPATH , './/div[@data-testid="product-specifications-testid"]' )
-            
-            obj_button_description = div_detalles_producto.find_element( By.XPATH , '//button/span[text()="Descripción"]' )
-            obj_button_description.click()
-            
-            obj_panel_info = div_detalles_producto.find_element( By.XPATH , './/div/div/div[2]' )
-            description_url = obj_panel_info.text
-
-        except:
-            description_url = ''
-        
-
-        try:
-            atr_sku =  "https://www.lider.cl/supermercado/product/sku/829152/koyle-vino-tinto-gran-reserva-cabernet-sauvignon-botella-750-ml"
-            patron = r"/sku/(\d+)/"
-            atr_sku = re.search(patron, url_sku[0]).group(1)
-        except:
-            atr_sku = ''
-            
-        
-        try:
-
-            normal_price = '' 
-            internet_price = ''
-            cmr_price = ''
             
             try:
+                wait(driver, 30).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
+                df_producto = driver.find_element( By.XPATH, './/div[@class="product-detail-card__product-detail-container"]')
+            except TimeoutException:
+                print("Timeout al intentar encontrar el elemento en la página.")  
+            try:
+                id_url = df_producto.find_element(By.XPATH, './/span[@class="product-detail-card__product-item-number"]' ).text
+                # id_url = id_url.replace("item","").replace(" ","")
+            except:
+                id_url = ''
+            
+            try: 
+                name_url = df_producto.find_element(By.XPATH, './/h1[@class="product-detail-display-name"]' ).text
+            except:
+                name_url = ''
+
+
+            try:
+                div_detalles_producto = driver.find_element( By.XPATH , './/div[@data-testid="product-specifications-testid"]' )
+                
+                obj_button_description = div_detalles_producto.find_element( By.XPATH , '//button/span[text()="Descripción"]' )
+                obj_button_description.click()
+                
+                obj_panel_info = div_detalles_producto.find_element( By.XPATH , './/div/div/div[2]' )
+                description_url = obj_panel_info.text
+
+            except:
+                description_url = ''
+            
+
+            try:
+                atr_sku =  "https://www.lider.cl/supermercado/product/sku/829152/koyle-vino-tinto-gran-reserva-cabernet-sauvignon-botella-750-ml"
+                patron = r"/sku/(\d+)/"
+                atr_sku = re.search(patron, url_sku[0]).group(1)
+            except:
+                atr_sku = ''
+                
+            
+            try:
+
+                normal_price = '' 
+                internet_price = ''
+                cmr_price = ''
+                
                 try:
-                    normal_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
+                    try:
+                        normal_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
+                    except:
+                        normal_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
+                    # normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
                 except:
-                    normal_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
-                # normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
+                    normal_price = ''
+
+                try:
+                    try:
+                        internet_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
+                    except:
+                        internet_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
+                    # internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
+                except:
+                    internet_price = ''
+
             except:
                 normal_price = ''
+                internet_price = ''
+                cmr_price = ''
+
 
             try:
-                try:
-                    internet_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
-                except:
-                    internet_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
-                # internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
+                wait(df_producto, 4).until(ec.presence_of_element_located((By.XPATH, "div[@class='m-auto pb-20 product-detail__card-section']/div[@class='product-detail-page__container']/div[1]/div[1]/div[@class='product-detail-card__product-detail-container']/div[@class='product-detail-card__product']/div[@class='product-detail-card__product-info']/div[@class='product-detail-card__product-detail']")))
+                id_client_sku = df_producto.find_elements((By.XPATH, "div[@class='m-auto pb-20 product-detail__card-section']/div[@class='product-detail-page__container']/div[1]/div[1]/div[@class='product-detail-card__product-detail-container']/div[@class='product-detail-card__product']/div[@class='product-detail-card__product-info']/div[@class='product-detail-card__product-detail']"))[0].text
             except:
-                internet_price = ''
+                id_client_sku = ''
 
-        except:
+            try:
+                cod_sku = df_producto.find_element(By.XPATH, './/span[@class="product-detail-card__product-item-number"]' ).text
+            except:
+                cod_sku = ''
+
+
+            try:
+                
+                img_url = ''
+                px_url = ''
+
+                images = df_producto.find_elements(By.XPATH, './/div[@class="image-preview__figure-wrapper"]/figure')
+
+                n_imagenes = len(images)
+
+                for im, i in zip(images, range(n_imagenes)):
+
+                    try:
+                        stile_img = im.get_attribute("style") #la url no esta en figure, sino en su style
+                        expre_regular = r'url\("([^"]+)"\)'
+                        im_url = re.search( expre_regular , stile_img ).group(1)
+
+                        request_img = Request( im_url , headers={'User-Agent': 'Mozilla/5.0'})
+                        
+                        u = urlopen( request_img )
+                        raw_data = u.read()
+                        u.close()
+                        
+                        img = Image.open(BytesIO(raw_data))
+                        
+                        if i == n_imagenes-1:
+                            img_url = img_url + im_url
+                            px_url = px_url + str(img.size) 
+                            
+                        else:
+                            img_url = img_url + im_url + '; '
+                            px_url = px_url + str(img.size) + '; '
+                        
+                    except:
+                        
+                        if i == n_imagenes-1:
+
+                            img_url = img_url + 'url_image not found'
+                            px_url = px_url + ''
+
+                        else:
+
+                            img_url = img_url + 'url_image not found' + '; '
+                            px_url = px_url + '; '
+                
+                image_info_1, image_info_2 = img_url, px_url
+            
+            except:
+                image_info_1,image_info_2 = '',''
+
+            try:
+                first = url_sku[1]
+            except:
+                first = ''
+            
+            try:
+                second = url_sku[2]
+            except:
+                second = ''
+            
+            try:
+                third = url_sku[3]
+            except:
+                third = ''
+            
+            try:
+                category_1 = url_sku[1]
+            except:
+                category_1 = ''
+
+            try:
+                category_2 = url_sku[2]
+            except:
+                category_2 = ''
+
+        except Exception as error:
+            print("Error..")
+            id_url = ''
+            name_url = ''
+            description_url = ''
+            atr_sku = ''
             normal_price = ''
             internet_price = ''
             cmr_price = ''
-
-
-        try:
-            wait(df_producto, 4).until(ec.presence_of_element_located((By.XPATH, "div[@class='m-auto pb-20 product-detail__card-section']/div[@class='product-detail-page__container']/div[1]/div[1]/div[@class='product-detail-card__product-detail-container']/div[@class='product-detail-card__product']/div[@class='product-detail-card__product-info']/div[@class='product-detail-card__product-detail']")))
-            id_client_sku = df_producto.find_elements((By.XPATH, "div[@class='m-auto pb-20 product-detail__card-section']/div[@class='product-detail-page__container']/div[1]/div[1]/div[@class='product-detail-card__product-detail-container']/div[@class='product-detail-card__product']/div[@class='product-detail-card__product-info']/div[@class='product-detail-card__product-detail']"))[0].text
-        except:
             id_client_sku = ''
-
-        try:
-            cod_sku = df_producto.find_elements((By.XPATH, '//*[@id="root"]/div[1]/div/div[1]/div/div/div/div/div/div/div/div/div[1]/div[2]/div/div/div/div[2]/div/div[2]/span'))[0].text
-        except:
             cod_sku = ''
-
-
-        try:
-            
-            img_url = ''
-            px_url = ''
-
-            images = df_producto.find_elements(By.XPATH, './/div[@class="image-preview__figure-wrapper"]/figure')
-
-            n_imagenes = len(images)
-
-            for im, i in zip(images, range(n_imagenes)):
-
-                try:
-                    stile_img = im.get_attribute("style") #la url no esta en figure, sino en su style
-                    expre_regular = r'url\("([^"]+)"\)'
-                    im_url = re.search( expre_regular , stile_img ).group(1)
-
-                    request_img = Request( im_url , headers={'User-Agent': 'Mozilla/5.0'})
-                    
-                    u = urlopen( request_img )
-                    raw_data = u.read()
-                    u.close()
-                    
-                    img = Image.open(BytesIO(raw_data))
-                    
-                    if i == n_imagenes-1:
-                        img_url = img_url + im_url
-                        px_url = px_url + str(img.size) 
-                        
-                    else:
-                        img_url = img_url + im_url + '; '
-                        px_url = px_url + str(img.size) + '; '
-                    
-                except:
-                    
-                    if i == n_imagenes-1:
-
-                        img_url = img_url + 'url_image not found'
-                        px_url = px_url + ''
-
-                    else:
-
-                        img_url = img_url + 'url_image not found' + '; '
-                        px_url = px_url + '; '
-            
-            image_info_1, image_info_2 = img_url, px_url
-        
-        except:
-            image_info_1,image_info_2 = '',''
-
-        try:
-            first = url_sku[1]
-        except:
+            image_info_1 = ''
+            image_info_2 = ''
             first = ''
-        
-        try:
-            second = url_sku[2]
-        except:
             second = ''
-        
-        try:
-            third = url_sku[3]
-        except:
             third = ''
-        
-        try:
-            category_1 = url_sku[1]
-        except:
             category_1 = ''
-
-        try:
-            category_2 = url_sku[2]
-        except:
             category_2 = ''
-
-    except:
-        print("Error..")
-        id_url = ''
-        name_url = ''
-        description_url = ''
-        atr_sku = ''
-        normal_price = ''
-        internet_price = ''
-        cmr_price = ''
-        id_client_sku = ''
-        cod_sku = ''
-        image_info_1 = ''
-        image_info_2 = ''
-        first = ''
-        second = ''
-        third = ''
-        category_1 = ''
-        category_2 = ''
     
-    try:
-        driver.close()
+    except WebDriverException as e:
+        print("Error en WebDriver:", e)
     except Exception as e:
-        print("Ocurrió un error al intentar cerrar el navegador:", e)
+        print("Error:", e)
+    finally:
+        # Asegúrate de cerrar el driver al finalizar
+        if driver is not None:
+            driver.quit()
         
     return pais_sku, url_sku[0], id_url, name_url, description_url, id_client_sku, cod_sku, first, second, third, category_1, category_2, atr_sku, normal_price, internet_price, cmr_price, image_info_1, image_info_2
 
