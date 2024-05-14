@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 import multiprocessing as mp
 import web_scraper_jumbo.istarmap  # import to apply patch
@@ -355,6 +355,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
     third = ''
     category_1 = ''
     category_2 = ''
+    driver = None
 
     try:
         driver = get_driver()
@@ -523,13 +524,20 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             category_1 = ''
             category_2 = ''
         
+    except TimeoutException:
+        print("Timeout al intentar encontrar el elemento en la página.")
+    except NoSuchElementException:
+        print("Elemento no encontrado en la página.")
     except WebDriverException as e:
         print("Error en WebDriver:", e)
     except Exception as e:
         print("Error:", e)
     finally:
-        # Asegúrate de cerrar el driver al finalizar
-        driver.quit()
+        if driver is not None:
+            try:
+                driver.quit()
+            except WebDriverException as e:
+                print("Error al cerrar el driver:", e)
 
     return pais_sku, url_sku[0], id_url, name_url, description_url, id_client_sku, cod_sku, first, second, third, category_1, category_2, atr_sku, normal_price, internet_price, cmr_price, image_info_1, image_info_2
 
