@@ -471,12 +471,12 @@ def homologacion():
     print(df_final[['id_smart', 'name', 'empresa', 'cod_cat_n1_smt', 'cod_cat_n2_smt']].drop_duplicates().shape)
 
     fecha_creacion = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    nombre_archivo_parquet = f"df_matching_{fecha_creacion}.parquet"
+    nombre_archivo_csv = f"df_matching_{fecha_creacion}.csv"
 
     # df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa', 'name_tottus', 'score_tottus', 'marca_tottus', 'formato_tottus', 'precio_tottus', 'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_csv(ruta + f'/df_matching.csv', index=False, sep=';')
     # df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa', 'name_tottus', 'score_tottus', 'marca_tottus', 'formato_tottus', 'precio_tottus', 'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_parquet(nombre_archivo_parquet, index=False)
     df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa',  'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_csv(ruta + f'/df_matching.csv', index=False, sep=';')
-    df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa',  'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_parquet(nombre_archivo_parquet, index=False)
+    df_final[['id_smart', 'name', 'description', 'cod_cat_n1_smt', 'categoria_nivel_1', 'cod_cat_n2_smt', 'categoria_nivel_2', 'marca', 'formato', 'precio', 'image1', 'image2', 'image3', 'empresa',  'name_lider', 'score_lider', 'marca_lider', 'formato_lider', 'precio_lider', 'name_jumbo', 'score_jumbo', 'marca_jumbo', 'formato_jumbo', 'precio_jumbo', 'flag_mmpp']].drop_duplicates().to_csv(nombre_archivo_csv, index=False, sep=';')
 
 
     ##! LEER Y GUARDAR DATOS EN LA DB
@@ -495,12 +495,12 @@ def homologacion():
 
     ##! SUBIR DATOS HISTORICOS A AWS S3
     # Ruta completa del archivo local
-    ruta_completa_local = os.path.abspath(nombre_archivo_parquet)
+    ruta_completa_local = os.path.abspath(nombre_archivo_csv)
 
     # Subir el archivo Parquet a S3
     try:
-        s3_client.upload_file(ruta_completa_local, s3_bucket_name, nombre_archivo_parquet)
-        print(f"Archivo Parquet '{nombre_archivo_parquet}' subido exitosamente a S3.")
+        s3_client.upload_file(ruta_completa_local, s3_bucket_name, nombre_archivo_csv)
+        print(f"Archivo Parquet '{nombre_archivo_csv}' subido exitosamente a S3.")
     except Exception as e:
         print(f"Error al subir el archivo Parquet a S3: {str(e)}")
 

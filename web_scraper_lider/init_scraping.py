@@ -17,6 +17,9 @@ from web_scraper_lider import utils_scraping as st
 
 from datetime import datetime
 import pandas as pd
+from dotenv import load_dotenv
+import io
+from config.s3_aws import s3_client
 
 #################################################
 # Parámetros
@@ -27,6 +30,19 @@ actual_date = str(datetime.now())[0:10].replace('-','')
 ruta = os.path.dirname(os.path.abspath(__file__)) + '/Output/'
 # ruta_actual = ruta+actual_date+'/'
 
+"""
+Subir Historial por categorias a s3
+"""
+s3_bucket_name_hist = os.getenv("S3_BUCKET_NAME_HIST")
+
+current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+folder_path = f'Lider_{current_time}/'
+
+def save_to_s3(df, s3_path):
+    with io.BytesIO() as buffer:
+        df.to_excel(buffer, index=False)
+        buffer.seek(0)
+        s3_client.upload_fileobj(buffer, s3_bucket_name_hist, s3_path)
 # try:
 #     os.mkdir(ruta_actual)
 # except OSError as e:
@@ -152,7 +168,11 @@ def scraping():
 
         # df_report.to_excel(ruta_actual + f'REPORTE_WS_'+str(cat1)+'_LIDER'+'_'+actual_date+'.xlsx'.format(actual_date), index=0)
 
-
+        # Guardar los DataFrames en S3
+        save_to_s3(df_categories, folder_path + 'df_categorias_lider.xlsx')
+        save_to_s3(total_url_sku, folder_path + f'df_info_products_{cat1}_lider.xlsx')
+        save_to_s3(df_producto_t, folder_path + f'results_ws_{cat1}_lider.xlsx')
+        save_to_s3(df_report, folder_path + f'REPORTE_WS_{cat1}_LIDER.xlsx')
         #################################################
         # Carga a STORAGE
         #################################################
