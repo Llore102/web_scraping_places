@@ -45,41 +45,39 @@ try:
 except RuntimeError:
    pass
 
+headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)Chrome/80.0.3987.132 Safari/537.36"}
 
 
 def get_driver_():
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
-    chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
+    #chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--disable-notifications")
 
     driver = uc.Chrome(service=ChromeService(binary_path), options=chrome_options)
     # Ofuscar propiedades de Selenium
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     driver.execute_script('navigator.permissions.query = (parameters) => parameters.name === "notifications" ? Promise.resolve({ state: Notification.permission }) : Promise.resolve({ state: "denied" });')
-
 
     # driver.maximize_window()
     return driver
 
 def get_driver_aux():
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
-    chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
+    #chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--disable-notifications")
 
     driver = uc.Chrome(service=ChromeService(binary_path), options=chrome_options)
     # Ofuscar propiedades de Selenium
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     driver.execute_script('navigator.permissions.query = (parameters) => parameters.name === "notifications" ? Promise.resolve({ state: Notification.permission }) : Promise.resolve({ state: "denied" });')
 
-
     driver.maximize_window()
     return driver
 
 # def get_driver():
 #     chrome_options = Options()
-#     # chrome_options.add_argument("--headless")
 #     prefs = {"profile.default_content_setting_values.notifications" : 2}
 #     # chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
 #     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
@@ -93,9 +91,9 @@ def get_driver_aux():
 
 def get_driver():
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
-    chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
+    #chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--disable-notifications")
 
     driver = uc.Chrome(service=ChromeService(binary_path), options=chrome_options)
     # Ofuscar propiedades de Selenium
@@ -112,13 +110,33 @@ def get_url_lider():
     url_lider = 'https://www.lider.cl/supermercado'
 
     return(url_lider)
-headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)Chrome/80.0.3987.132 Safari/537.36"}
+
+
+def eliminar_captcha(driver):
+    try:
+        iframe_element = wait(driver, 3).until(
+            ec.presence_of_element_located((By.ID, "px-captcha-modal"))
+        )
+        driver.execute_script("""
+            var iframe = arguments[0];
+            iframe.parentNode.removeChild(iframe);
+        """, iframe_element)
+        print("CAPTCHA eliminado")
+    except Exception as e:
+        print("CAPTCHA no encontrado o no pudo ser eliminado")
+
+
+
 
 def get_info_category():
+    list_cat = ['Despensa', 'Carnes y Pescados', 'Frutas y Verduras', 'Frescos y Lácteos',
+                'Limpieza y Aseo', 'Bebidas y Licores', 'Congelados', 'Desayunos y Dulces',
+                'Colaciones', 'Panadería y Pastelería', 'Platos Preparados', 'Mascotas']
+    
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
     chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--disable-notifications")
 
     driver = uc.Chrome(service=ChromeService(binary_path), options=chrome_options)
     # Ofuscar propiedades de Selenium
@@ -126,34 +144,58 @@ def get_info_category():
     driver.execute_script('navigator.permissions.query = (parameters) => parameters.name === "notifications" ? Promise.resolve({ state: Notification.permission }) : Promise.resolve({ state: "denied" });')
 
     time.sleep(random.uniform(2, 5))  # Esperar un tiempo aleatorio
+    driver.maximize_window()
 
     driver.get(get_url_lider())
-
-    time.sleep(random.uniform(2, 10))  # Esperar un tiempo aleatorio
-    driver.save_screenshot('screenshotL.png')
+    time.sleep(random.uniform(2, 5)) 
+    #driver.save_screenshot('screenshotL.png')
+    
 
     list_categories = []
 
     try:
-        wait(driver, 18).until(ec.element_to_be_clickable((By.XPATH, ".//header//button[text()='Categorías']")))
+        eliminar_captcha(driver)
+        # try:
+        #     iframe_element = driver.find_element(By.ID, "px-captcha-modal")
+        #     driver.execute_script("""
+        #         var iframe = arguments[0];
+        #         iframe.parentNode.removeChild(iframe);
+        #     """, iframe_element)
+        # except Exception as es:
+        #     print("CAPTCHA")
+        #     pass
+
+
+        wait(driver, 8).until(ec.element_to_be_clickable((By.XPATH, ".//header//button[text()='Categorías']")))
         driver.find_element(By.XPATH, ".//header//button[text()='Categorías']").click()
 
-        wait(driver, 15).until(ec.element_to_be_clickable((By.XPATH, './/div[@data-testid="main-categories-test-id"]')))
+        wait(driver, 8).until(ec.element_to_be_clickable((By.XPATH, './/div[@data-testid="main-categories-test-id"]')))
         first_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]/div')
 
+
+        time.sleep(3)
         for first in first_level_categories:
+            first_level_category = first.text
+            if first_level_category not in list_cat:
+                continue  # Saltar categorías que no están en la lista
+
             div_desplazable = driver.find_element("xpath", './/div[contains(@class,"styled__FirstLevelContainer")]')
             driver.execute_script( "arguments[0].scrollTop = arguments[1];" , div_desplazable , 0 )
             posicion_y = first.location['y']
             driver.execute_script( "arguments[0].scrollTop = arguments[1];" , div_desplazable , posicion_y )
             first_level_category = first.text
             first.click()
-            time.sleep(2)
+            time.sleep(3)
+            wait(driver, 8).until(ec.presence_of_all_elements_located((By.XPATH, './/div[contains(@class,"styled__ThirdLevelSection")]/div/a')))
             second_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__ThirdLevelSection")]/div/a')
 
             for second in second_level_categories:
                 second_level_category = second.text
+                time.sleep(random.uniform(2, 5))
                 url_second_level_category = second.get_attribute("href")
+                time.sleep(random.uniform(2, 5))
+                eliminar_captcha(driver)
+                time.sleep(3)
 
                 second = second.find_element("xpath", "..")  # volvemos al div padre
                 element_third_level_categorie = second.find_elements("xpath", "div/a")  # tomamos el primer elemento
@@ -162,13 +204,25 @@ def get_info_category():
                     subcategory = element_third_level_categorie[0]
                     try:
                         driver_aux = get_driver_aux()
+
+                        time.sleep(random.uniform(1, 2)) 
                         driver_aux.get(subcategory.get_attribute("href"))
-                        wait(driver_aux, 18).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
+                        time.sleep(random.uniform(1, 2))
+
+                        eliminar_captcha(driver_aux)
+                        time.sleep(3)
+
+                        wait(driver_aux, 8).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
                         third_level_categories = driver_aux.find_elements("xpath", './/ul[@class="sister-categories__list"]/li/a')
 
+                        time.sleep(5)
                         for third in third_level_categories:
                             third_level_category = third.text
+                            time.sleep(random.uniform(1, 2)) 
                             url_third_level_category = third.get_attribute("href")
+                            time.sleep(random.uniform(1, 2)) 
+                            eliminar_captcha(driver_aux)
+                            
                             list_categories.append([first_level_category, second_level_category, url_second_level_category, third_level_category, url_third_level_category])
 
                     except TimeoutException:
@@ -182,23 +236,26 @@ def get_info_category():
         print("Categorías no encontradas")
     finally:
         
-        driver.quit()
+        driver.close()
 
     return pd.DataFrame(list_categories, columns=['first_level_category', 'second_level_category', 'url_second_level_category', 'third_level_category', 'url_third_level_category']), len(list_categories)
 
 def get_pages_category(pais:str, i:str, first:str, second:str, third:str):
     driver = None
+    total_url_cat = list()
     try:
 
         driver = get_driver()
 
-        total_url_cat = list()
+        
 
         # driver.maximize_window()
 
+        time.sleep(random.uniform(2, 5)) 
         driver.get(i)
+        time.sleep(random.uniform(2, 5)) 
+        eliminar_captcha(driver)
         
-        time.sleep(3)
 
         try:
 
@@ -225,7 +282,7 @@ def get_pages_category(pais:str, i:str, first:str, second:str, third:str):
             print("Error:", e)
     finally:
         if driver is not None:
-            driver.quit()
+            driver.close()
     
     return(total_url_cat)
 
@@ -256,10 +313,15 @@ def get_info_product(pais:str, list_pages_category:list):
 
 
     try:
+
         driver = get_driver()
+
         # driver.maximize_window()
+        time.sleep(random.uniform(2, 5)) 
         driver.get(list_pages_category[0])
-        time.sleep(3)
+        time.sleep(random.uniform(2, 5)) 
+        eliminar_captcha(driver)
+
 
         try:
 
@@ -270,7 +332,11 @@ def get_info_product(pais:str, list_pages_category:list):
                 url_category.append( list_pages_category[0] )
                 
                 indiv_nombre_product = producto.find_element( "xpath" , './/div[@class="product-card_description-wrapper"]/div/span[2]' ).text
+                time.sleep(random.uniform(1, 2))
                 indiv_url_producto = producto.find_element("xpath", ".//a").get_attribute("href")
+                time.sleep(random.uniform(1, 2))
+                eliminar_captcha(driver)
+
 
                 name_product.append( indiv_nombre_product )
                 url_product.append( indiv_url_producto )
@@ -287,7 +353,7 @@ def get_info_product(pais:str, list_pages_category:list):
         print('ERROR:', e)
     finally:
         if driver is not None:
-            driver.quit()
+            driver.close()
 
     # Filtrar filas con valores vacíos
     data = list(zip(url_category, name_product, url_product, first_level_category, second_level_category, third_level_category))
@@ -339,13 +405,16 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
     driver = None
 
     try:
+
         driver = get_driver()
 
-        
+        time.sleep(random.uniform(2, 5)) 
         driver.get(url_sku[0])
+        time.sleep(random.uniform(2, 5)) 
+        eliminar_captcha(driver)
+
 
         try:
-            
             try:
                 wait(driver, 64).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
                 df_producto = driver.find_element( By.XPATH, './/div[@class="product-detail-card__product-detail-container"]')
@@ -530,7 +599,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
     finally:
         if driver is not None:
             try:
-                driver.quit()
+                driver.close()
             except (WebDriverException, Exception) as e:
                 print(f"Error al cerrar el driver: {e}")
         

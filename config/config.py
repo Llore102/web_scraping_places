@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from dotenv import load_dotenv, dotenv_values
-
+import os
 
 #DB local
 #conn = MongoClient().Inventory
@@ -8,10 +8,10 @@ from dotenv import load_dotenv, dotenv_values
 
 # Cargar las variables de entorno desde el archivo .env
 load_dotenv()
-env_vars = dotenv_values()
+#env_vars = dotenv_values()
 
 # Obtener la URL de conexión de MongoDB desde las variables de entorno
-mongo_uri = env_vars["MONGO_URI"]
+mongo_uri =  os.getenv("MONGO_URI")
 
 db_name = "Smartbuy"
 

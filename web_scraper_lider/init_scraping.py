@@ -87,7 +87,7 @@ def scraping():
 
         cat1 = cat.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u').replace(' ','_')
 
-        print('Scraping de Categorias Lider'+str(cat)+':')
+        print('Scraping de Categorias Lider '+str(cat)+':')
 
         #df_categories_1 = df_categories[(df_categories['third_level_category']=='ver todo') & (df_categories['first_level_category']==cat)]
         df_categories_1 = df_categories[(df_categories['first_level_category']==cat)]

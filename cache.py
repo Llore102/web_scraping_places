@@ -13,7 +13,7 @@ def remove_pycache(base_dir):
 
 if __name__ == "__main__":
     # Especifica el directorio base desde donde deseas eliminar los __pycache__
-    base_directory = 'C:/Users/llore/Jupyter/Scrapers/smartbuy'  # Cambia 'ruta/a/tu/carpeta' por la ruta de tu directorio base
+    base_directory = 'C:/Users/llore/Jupyter/Scrapers/web_scraping_places'  # Cambia 'ruta/a/tu/carpeta' por la ruta de tu directorio base
     
     # Llama a la función para eliminar los __pycache__
     remove_pycache(base_directory)

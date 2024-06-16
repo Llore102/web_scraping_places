@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 import math
-from config.config import conn, mongo_uri
+from config.config import conn
 
 #! INSEETAR DATOS EN LA BD
 

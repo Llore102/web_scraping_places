@@ -236,7 +236,7 @@ def get_pages_categories(pais:str, df_categories:pd.DataFrame):
 
     list_res = list()
 
-    with mp.Pool(n) as pool:
+    with mp.Pool(4) as pool:
         iterable = [(pais, i, first, second, third) for i, first, second, third in zip(df_categories.url_third_level_category, df_categories.first_level_category, df_categories.second_level_category, df_categories.third_level_category)]
         results = list(tqdm.tqdm(pool.istarmap(get_pages_category, iterable), total=len(iterable)))
         pool.close()
@@ -309,7 +309,7 @@ def get_info_product(pais:str, list_pages_category:list):
 
 def get_info_products(pais:str, df_info_category:list):
 
-    with mp.Pool(n) as pool:
+    with mp.Pool(4) as pool:
         iterable = [(pais, i) for i in df_info_category]
         results = list(tqdm.tqdm(pool.istarmap(get_info_product, iterable), total=len(iterable)))
         pool.close()
@@ -543,7 +543,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
 
 def get_df_scraping(pais:str, list_url:list):
 
-    with mp.Pool(n) as pool:
+    with mp.Pool(4) as pool:
         iterable = [(pais, li) for li in list_url]
         results = list(tqdm.tqdm(pool.istarmap(get_scraping_sku, iterable), total=len(iterable)))
         pool.close()
