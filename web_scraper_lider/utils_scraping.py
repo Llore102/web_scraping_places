@@ -1,5 +1,6 @@
 from chromedriver_py import binary_path
-
+import requests
+from bs4 import BeautifulSoup
 import multiprocessing as mp
 # import istarmap  # import to apply patch
 import web_scraper_lider.istarmap
@@ -50,7 +51,7 @@ headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 
 def get_driver_():
     chrome_options = Options()
-    #chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
+    chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--disable-notifications")
 
@@ -62,19 +63,19 @@ def get_driver_():
     # driver.maximize_window()
     return driver
 
-def get_driver_aux():
-    chrome_options = Options()
-    #chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_argument("--disable-notifications")
+# def get_driver_aux():
+#     chrome_options = Options()
+#     chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
+#     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+#     chrome_options.add_argument("--disable-notifications")
 
-    driver = uc.Chrome(service=ChromeService(binary_path), options=chrome_options)
-    # Ofuscar propiedades de Selenium
-    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-    driver.execute_script('navigator.permissions.query = (parameters) => parameters.name === "notifications" ? Promise.resolve({ state: Notification.permission }) : Promise.resolve({ state: "denied" });')
+#     driver = uc.Chrome(service=ChromeService(binary_path), options=chrome_options)
+#     # Ofuscar propiedades de Selenium
+#     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+#     driver.execute_script('navigator.permissions.query = (parameters) => parameters.name === "notifications" ? Promise.resolve({ state: Notification.permission }) : Promise.resolve({ state: "denied" });')
 
-    driver.maximize_window()
-    return driver
+#     driver.maximize_window()
+#     return driver
 
 # def get_driver():
 #     chrome_options = Options()
@@ -91,7 +92,7 @@ def get_driver_aux():
 
 def get_driver():
     chrome_options = Options()
-    #chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
+    chrome_options.add_argument(f"user-agent={headers['User-Agent']}")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--disable-notifications")
 
@@ -124,8 +125,6 @@ def eliminar_captcha(driver):
         print("CAPTCHA eliminado")
     except Exception as e:
         print("CAPTCHA no encontrado o no pudo ser eliminado")
-
-
 
 
 def get_info_category():
@@ -186,7 +185,7 @@ def get_info_category():
             first_level_category = first.text
             first.click()
             time.sleep(3)
-            wait(driver, 8).until(ec.presence_of_all_elements_located((By.XPATH, './/div[contains(@class,"styled__ThirdLevelSection")]/div/a')))
+            wait(driver, 12).until(ec.presence_of_all_elements_located((By.XPATH, './/div[contains(@class,"styled__ThirdLevelSection")]/div/a')))
             second_level_categories = driver.find_elements("xpath", './/div[contains(@class,"styled__ThirdLevelSection")]/div/a')
 
             for second in second_level_categories:
@@ -203,24 +202,24 @@ def get_info_category():
                 if element_third_level_categorie:
                     subcategory = element_third_level_categorie[0]
                     try:
-                        driver_aux = get_driver_aux()
+                        driver_aux = get_driver()
 
-                        time.sleep(random.uniform(1, 2)) 
+                        time.sleep(random.uniform(2, 5)) 
                         driver_aux.get(subcategory.get_attribute("href"))
-                        time.sleep(random.uniform(1, 2))
+                        time.sleep(random.uniform(2, 5))
 
                         eliminar_captcha(driver_aux)
                         time.sleep(3)
 
-                        wait(driver_aux, 8).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
+                        wait(driver_aux, 12).until(ec.element_to_be_clickable((By.XPATH, './/ul[@class="sister-categories__list"]')))
                         third_level_categories = driver_aux.find_elements("xpath", './/ul[@class="sister-categories__list"]/li/a')
 
                         time.sleep(5)
                         for third in third_level_categories:
                             third_level_category = third.text
-                            time.sleep(random.uniform(1, 2)) 
+                            time.sleep(random.uniform(2, 5)) 
                             url_third_level_category = third.get_attribute("href")
-                            time.sleep(random.uniform(1, 2)) 
+                            time.sleep(random.uniform(2, 5)) 
                             eliminar_captcha(driver_aux)
                             
                             list_categories.append([first_level_category, second_level_category, url_second_level_category, third_level_category, url_third_level_category])
@@ -239,6 +238,8 @@ def get_info_category():
         driver.close()
 
     return pd.DataFrame(list_categories, columns=['first_level_category', 'second_level_category', 'url_second_level_category', 'third_level_category', 'url_third_level_category']), len(list_categories)
+
+
 
 def get_pages_category(pais:str, i:str, first:str, second:str, third:str):
     driver = None
@@ -300,6 +301,7 @@ def get_pages_categories(pais:str, df_categories:pd.DataFrame):
         list_res = list_res + res
     
     return(pd.DataFrame(list_res, columns=['url_category', 'first_level_category', 'second_level_category', 'third_level_category']).drop_duplicates().values.tolist())
+
 
 def get_info_product(pais:str, list_pages_category:list):
     url_category = list()
@@ -384,37 +386,19 @@ def validate_url_cat(total_url_sku:pd.DataFrame, df_categories:pd.DataFrame):
 
     return(cat_validate)
 
+
 def get_scraping_sku(pais_sku:str, url_sku:list):
 
-    id_url = ''
-    name_url = ''
-    description_url = ''
-    atr_sku = ''
-    normal_price = ''
-    internet_price = ''
-    cmr_price = ''
-    id_client_sku = ''
-    cod_sku = ''
-    image_info_1 = ''
-    image_info_2 = ''
-    first = ''
-    second = ''
-    third = ''
-    category_1 = ''
-    category_2 = ''
     driver = None
 
     try:
+        driver = get_driver_()
 
-        driver = get_driver()
+        driver.maximize_window()
 
-        time.sleep(random.uniform(2, 5)) 
-        driver.get(url_sku[0])
-        time.sleep(random.uniform(2, 5)) 
-        eliminar_captcha(driver)
-
-
+        driver.get( url_sku[0] )
         try:
+
             try:
                 wait(driver, 64).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
                 df_producto = driver.find_element( By.XPATH, './/div[@class="product-detail-card__product-detail-container"]')
@@ -587,7 +571,7 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
             third = ''
             category_1 = ''
             category_2 = ''
-    
+        
     except TimeoutException:
         print("Timeout al intentar encontrar el elemento en la página.")
     except NoSuchElementException:
@@ -599,214 +583,11 @@ def get_scraping_sku(pais_sku:str, url_sku:list):
     finally:
         if driver is not None:
             try:
-                driver.close()
-            except (WebDriverException, Exception) as e:
-                print(f"Error al cerrar el driver: {e}")
-        
+                driver.quit()
+            except WebDriverException as e:
+                print("Error al cerrar el driver:", e)
+
     return pais_sku, url_sku[0], id_url, name_url, description_url, id_client_sku, cod_sku, first, second, third, category_1, category_2, atr_sku, normal_price, internet_price, cmr_price, image_info_1, image_info_2
-
-
-# def get_scraping_sku(pais_sku:str, url_sku:list):
-
-#     driver = None
-
-#     try:
-#         driver = get_driver_()
-
-#         driver.maximize_window()
-
-#         driver.get( url_sku[0] )
-#         try:
-
-#             try:
-#                 wait(driver, 64).until(ec.presence_of_element_located( (By.XPATH, './/div[@class="product-detail-card__product-detail-container"]' ) ))        
-#                 df_producto = driver.find_element( By.XPATH, './/div[@class="product-detail-card__product-detail-container"]')
-#             except TimeoutException:
-#                 print("Timeout al intentar encontrar el elemento en la página.")  
-#             try:
-#                 id_url = df_producto.find_element(By.XPATH, './/span[@class="product-detail-card__product-item-number"]' ).text
-#                 # id_url = id_url.replace("item","").replace(" ","")
-#             except:
-#                 id_url = ''
-            
-#             try: 
-#                 name_url = df_producto.find_element(By.XPATH, './/h1[@class="product-detail-display-name"]' ).text
-#             except:
-#                 name_url = ''
-
-
-#             try:
-#                 div_detalles_producto = driver.find_element( By.XPATH , './/div[@data-testid="product-specifications-testid"]' )
-                
-#                 obj_button_description = div_detalles_producto.find_element( By.XPATH , '//button/span[text()="Descripción"]' )
-#                 obj_button_description.click()
-                
-#                 obj_panel_info = div_detalles_producto.find_element( By.XPATH , './/div/div/div[2]' )
-#                 description_url = obj_panel_info.text
-
-#             except:
-#                 description_url = ''
-            
-
-#             try:
-#                 atr_sku =  "https://www.lider.cl/supermercado/product/sku/829152/koyle-vino-tinto-gran-reserva-cabernet-sauvignon-botella-750-ml"
-#                 patron = r"/sku/(\d+)/"
-#                 atr_sku = re.search(patron, url_sku[0]).group(1)
-#             except:
-#                 atr_sku = ''
-                
-            
-#             try:
-
-#                 normal_price = '' 
-#                 internet_price = ''
-#                 cmr_price = ''
-                
-#                 try:
-#                     try:
-#                         normal_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
-#                     except:
-#                         normal_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
-#                     # normal_price = normal_price.replace("$","").replace(".","").replace(" ","")
-#                 except:
-#                     normal_price = ''
-
-#                 try:
-#                     try:
-#                         internet_price = df_producto.find_element(By.XPATH, './/div[@class="regular-unit-price__price-default"]/span').text
-#                     except:
-#                         internet_price = df_producto.find_element(By.XPATH, './/span[@class="pdp-mobile-sales-price"]').text
-#                     # internet_price = internet_price.replace("$","").replace(".","").replace(" ","")
-#                 except:
-#                     internet_price = ''
-
-#             except:
-#                 normal_price = ''
-#                 internet_price = ''
-#                 cmr_price = ''
-
-
-#             try:
-#                 wait(df_producto, 4).until(ec.presence_of_element_located((By.XPATH, "div[@class='m-auto pb-20 product-detail__card-section']/div[@class='product-detail-page__container']/div[1]/div[1]/div[@class='product-detail-card__product-detail-container']/div[@class='product-detail-card__product']/div[@class='product-detail-card__product-info']/div[@class='product-detail-card__product-detail']")))
-#                 id_client_sku = df_producto.find_elements((By.XPATH, "div[@class='m-auto pb-20 product-detail__card-section']/div[@class='product-detail-page__container']/div[1]/div[1]/div[@class='product-detail-card__product-detail-container']/div[@class='product-detail-card__product']/div[@class='product-detail-card__product-info']/div[@class='product-detail-card__product-detail']"))[0].text
-#             except:
-#                 id_client_sku = ''
-
-#             try:
-#                 cod_sku = df_producto.find_element(By.XPATH, './/span[@class="product-detail-card__product-item-number"]' ).text
-#             except:
-#                 cod_sku = ''
-
-
-#             try:
-                
-#                 img_url = ''
-#                 px_url = ''
-
-#                 images = df_producto.find_elements(By.XPATH, './/div[@class="image-preview__figure-wrapper"]/figure')
-
-#                 n_imagenes = len(images)
-
-#                 for im, i in zip(images, range(n_imagenes)):
-
-#                     try:
-#                         stile_img = im.get_attribute("style") #la url no esta en figure, sino en su style
-#                         expre_regular = r'url\("([^"]+)"\)'
-#                         im_url = re.search( expre_regular , stile_img ).group(1)
-
-#                         request_img = Request( im_url , headers={'User-Agent': 'Mozilla/5.0'})
-                        
-#                         u = urlopen( request_img )
-#                         raw_data = u.read()
-#                         u.close()
-                        
-#                         img = Image.open(BytesIO(raw_data))
-                        
-#                         if i == n_imagenes-1:
-#                             img_url = img_url + im_url
-#                             px_url = px_url + str(img.size) 
-                            
-#                         else:
-#                             img_url = img_url + im_url + '; '
-#                             px_url = px_url + str(img.size) + '; '
-                        
-#                     except:
-                        
-#                         if i == n_imagenes-1:
-
-#                             img_url = img_url + 'url_image not found'
-#                             px_url = px_url + ''
-
-#                         else:
-
-#                             img_url = img_url + 'url_image not found' + '; '
-#                             px_url = px_url + '; '
-                
-#                 image_info_1, image_info_2 = img_url, px_url
-            
-#             except:
-#                 image_info_1,image_info_2 = '',''
-
-#             try:
-#                 first = url_sku[1]
-#             except:
-#                 first = ''
-            
-#             try:
-#                 second = url_sku[2]
-#             except:
-#                 second = ''
-            
-#             try:
-#                 third = url_sku[3]
-#             except:
-#                 third = ''
-            
-#             try:
-#                 category_1 = url_sku[1]
-#             except:
-#                 category_1 = ''
-
-#             try:
-#                 category_2 = url_sku[2]
-#             except:
-#                 category_2 = ''
-
-#         except Exception as error:
-#             print("Error..")
-#             id_url = ''
-#             name_url = ''
-#             description_url = ''
-#             atr_sku = ''
-#             normal_price = ''
-#             internet_price = ''
-#             cmr_price = ''
-#             id_client_sku = ''
-#             cod_sku = ''
-#             image_info_1 = ''
-#             image_info_2 = ''
-#             first = ''
-#             second = ''
-#             third = ''
-#             category_1 = ''
-#             category_2 = ''
-        
-#     except TimeoutException:
-#         print("Timeout al intentar encontrar el elemento en la página.")
-#     except NoSuchElementException:
-#         print("Elemento no encontrado en la página.")
-#     except WebDriverException as e:
-#         print("Error en WebDriver:", e)
-#     except Exception as e:
-#         print("Error:", e)
-#     finally:
-#         if driver is not None:
-#             try:
-#                 driver.quit()
-#             except WebDriverException as e:
-#                 print("Error al cerrar el driver:", e)
-
-#     return pais_sku, url_sku[0], id_url, name_url, description_url, id_client_sku, cod_sku, first, second, third, category_1, category_2, atr_sku, normal_price, internet_price, cmr_price, image_info_1, image_info_2
 
 def get_df_scraping(pais:str, list_url:list):
     try:
